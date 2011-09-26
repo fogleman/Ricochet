@@ -7,6 +7,7 @@ class View(wx.Panel):
         self.game = game
         self.color = None
         self.path = None
+        self.undo = []
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -18,7 +19,8 @@ class View(wx.Panel):
         if not self.path:
             return
         move = self.path.pop(0)
-        self.game.do_move(*move)
+        data = self.game.do_move(*move)
+        self.undo.append(data)
         self.Refresh()
         wx.CallLater(1000, self.on_solve)
     def on_size(self, event):
@@ -27,14 +29,22 @@ class View(wx.Panel):
     def on_key_down(self, event):
         code = event.GetKeyCode()
         if code == wx.WXK_ESCAPE:
-            self.game = model.Game()
-            self.Refresh()
+            self.GetParent().Close()
         elif code >= 32 and code < 128:
             value = chr(code)
             if value in model.COLORS:
                 self.color = value
             elif value == 'S':
                 self.solve()
+            elif value == 'U' and self.undo:
+                data = self.undo.pop(-1)
+                self.game.undo_move(data)
+                self.Refresh()
+            elif value == 'N':
+                self.path = None
+                self.undo = []
+                self.game = model.Game()
+                self.Refresh()
         elif self.color:
             lookup = {
                 wx.WXK_UP: model.NORTH,
@@ -46,7 +56,8 @@ class View(wx.Panel):
                 color = self.color
                 direction = lookup[code]
                 try:
-                    self.game.do_move(color, direction)
+                    data = self.game.do_move(color, direction)
+                    self.undo.append(data)
                 except Exception:
                     pass
                 self.Refresh()

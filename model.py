@@ -280,7 +280,7 @@ class Game(object):
     def search(self):
         max_depth = 1
         while True:
-            print 'Searching to depth:', max_depth
+            #print 'Searching to depth:', max_depth
             result = self._search([], set(), 0, max_depth)
             if result:
                 return result
