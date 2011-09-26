@@ -282,7 +282,7 @@ class Game(object):
         while True:
             #print 'Searching to depth:', max_depth
             result = self._search([], set(), 0, max_depth)
-            if result:
+            if result is not None:
                 return result
             max_depth += 1
     def _search(self, path, memo, depth, max_depth):
