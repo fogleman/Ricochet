@@ -3,7 +3,7 @@ import model
 
 class View(wx.Panel):
     def __init__(self, parent, game):
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.game = game
         self.color = None
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
@@ -45,6 +45,7 @@ class View(wx.Panel):
             model.YELLOW: wx.Brush(wx.Colour(255, 255, 0)),
         }
         dc = wx.AutoBufferedPaintDC(self)
+        dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         w, h = self.GetClientSize()
         size = min(w / 16, h / 16)
@@ -58,7 +59,7 @@ class View(wx.Panel):
                 robot = self.game.get_robot(index)
                 # border
                 dc.SetPen(wx.BLACK_PEN)
-                dc.SetBrush(wx.WHITE_BRUSH)
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
                 dc.DrawRectangle(x, y, size + 1, size + 1)
                 # token
                 if self.game.token in cell:
@@ -72,11 +73,19 @@ class View(wx.Panel):
                 dc.SetBrush(wx.BLACK_BRUSH)
                 if model.NORTH in cell:
                     dc.DrawRectangle(x, y, size + 1, wall)
+                    dc.DrawCircle(x, y, wall - 1)
+                    dc.DrawCircle(x + size, y, wall - 1)
                 if model.EAST in cell:
                     dc.DrawRectangle(x + size + 1, y, -wall, size + 1)
+                    dc.DrawCircle(x + size, y, wall - 1)
+                    dc.DrawCircle(x + size, y + size, wall - 1)
                 if model.SOUTH in cell:
                     dc.DrawRectangle(x, y + size + 1, size + 1, -wall)
+                    dc.DrawCircle(x, y + size, wall - 1)
+                    dc.DrawCircle(x + size, y + size, wall - 1)
                 if model.WEST in cell:
+                    dc.DrawCircle(x, y, wall - 1)
+                    dc.DrawCircle(x, y + size, wall - 1)
                     dc.DrawRectangle(x, y, wall, size + 1)
         dc.DrawText(str(self.game.moves), wall + 1, wall + 1)
 
