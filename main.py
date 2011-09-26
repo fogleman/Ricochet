@@ -6,10 +6,21 @@ class View(wx.Panel):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.game = game
         self.color = None
+        self.path = None
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+    def solve(self):
+        self.path = self.game.search()
+        self.on_solve()
+    def on_solve(self):
+        if not self.path:
+            return
+        move = self.path.pop(0)
+        self.game.do_move(*move)
+        self.Refresh()
+        wx.CallLater(1000, self.on_solve)
     def on_size(self, event):
         event.Skip()
         self.Refresh()
@@ -22,6 +33,8 @@ class View(wx.Panel):
             value = chr(code)
             if value in model.COLORS:
                 self.color = value
+            elif value == 'S':
+                self.solve()
         elif self.color:
             lookup = {
                 wx.WXK_UP: model.NORTH,

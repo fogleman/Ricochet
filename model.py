@@ -290,11 +290,10 @@ class Game(object):
             return list(path)
         if depth == max_depth:
             return None
-        #key = self.key()
-        #if key in memo:
-        #    return None
-        result = None
-        #memo.add(key)
+        key = (depth, self.key())
+        if key in memo:
+            return None
+        memo.add(key)
         if depth == max_depth - 1:
             colors = [self.token[0]]
         else:
@@ -307,9 +306,8 @@ class Game(object):
             path.pop(-1)
             self.undo_move(data)
             if result:
-                break
-        #memo.remove(key)
-        return result
+                return result
+        return None
     def __str__(self):
         rows = []
         for y in range(16):
@@ -353,6 +351,7 @@ def main():
         game.do_move(*move)
         print 'Move:', move
         print game
+    print 'Solution:', path
 
 if __name__ == '__main__':
     main()
