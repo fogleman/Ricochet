@@ -45,11 +45,18 @@ class View(wx.Panel):
             model.YELLOW: wx.Brush(wx.Colour(255, 255, 0)),
         }
         dc = wx.AutoBufferedPaintDC(self)
-        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.SetBackground(wx.LIGHT_GREY_BRUSH)
         dc.Clear()
         w, h = self.GetClientSize()
-        size = min(w / 16, h / 16)
+        p = 40
+        size = min((w - p) / 16, (h - p) / 16)
         wall = size / 10
+        ox = (w - size * 16) / 2
+        oy = (h - size * 16) / 2
+        dc.SetDeviceOrigin(ox, oy)
+        dc.SetClippingRegion(0, 0, size * 16 + 1, size * 16 + 1)
+        dc.SetBrush(wx.WHITE_BRUSH)
+        dc.DrawRectangle(0, 0, size * 16 + 1, size * 16 + 1)
         for j in range(16):
             for i in range(16):
                 x = i * size
@@ -91,8 +98,7 @@ class View(wx.Panel):
 
 class Frame(wx.Frame):
     def __init__(self):
-        style = wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX
-        wx.Frame.__init__(self, None, -1, 'Ricochet Robots!', style=style)
+        wx.Frame.__init__(self, None, -1, 'Ricochet Robots!')
         self.view = View(self, model.Game())
         self.view.SetSize((800, 800))
         self.Fit()
