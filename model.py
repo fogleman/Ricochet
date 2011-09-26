@@ -9,6 +9,13 @@ WEST = 'W'
 
 DIRECTIONS = [NORTH, EAST, SOUTH, WEST]
 
+REVERSE = {
+    NORTH: SOUTH,
+    EAST: WEST,
+    SOUTH: NORTH,
+    WEST: EAST,
+}
+
 OFFSET = {
     NORTH: -16,
     EAST: 1,
@@ -189,6 +196,7 @@ class Game(object):
         self.robots = self.place_robots()
         self.token = random.choice(TOKENS)
         self.moves = 0
+        self.last = dict((color, None) for color in COLORS)
     def place_robots(self):
         result = {}
         used = set()
@@ -219,6 +227,8 @@ class Game(object):
                 return value
         return None
     def can_move(self, color, direction):
+        if self.last[color] == REVERSE[direction]:
+            return False
         index = self.robots[color]
         if direction in self.grid[index]:
             return False
@@ -239,19 +249,25 @@ class Game(object):
         return index
     def do_move(self, color, direction):
         start = self.robots[color]
+        last = self.last[color]
+        if last == REVERSE[direction]:
+            raise Exception
         end = self.compute_move(color, direction)
         if start == end:
             raise Exception
         self.moves += 1
         self.robots[color] = end
-        return (color, start)
+        self.last[color] = direction
+        return (color, start, last)
     def undo_move(self, data):
-        color, start = data
+        color, start, last = data
         self.moves -= 1
         self.robots[color] = start
-    def get_moves(self):
+        self.last[color] = last
+    def get_moves(self, colors=None):
         result = []
-        for color in COLORS:
+        colors = colors or COLORS
+        for color in colors:
             for direction in DIRECTIONS:
                 if self.can_move(color, direction):
                     result.append((color, direction))
@@ -274,12 +290,16 @@ class Game(object):
             return list(path)
         if depth == max_depth:
             return None
-        key = self.key()
-        if key in memo:
-            return None
+        #key = self.key()
+        #if key in memo:
+        #    return None
         result = None
-        memo.add(key)
-        moves = self.get_moves()
+        #memo.add(key)
+        if depth == max_depth - 1:
+            colors = [self.token[0]]
+        else:
+            colors = None
+        moves = self.get_moves(colors)
         for move in moves:
             data = self.do_move(*move)
             path.append(move)
@@ -288,7 +308,7 @@ class Game(object):
             self.undo_move(data)
             if result:
                 break
-        memo.remove(key)
+        #memo.remove(key)
         return result
     def __str__(self):
         rows = []

@@ -50,7 +50,7 @@ class View(wx.Panel):
         w, h = self.GetClientSize()
         p = 40
         size = min((w - p) / 16, (h - p) / 16)
-        wall = size / 10
+        wall = size / 8
         ox = (w - size * 16) / 2
         oy = (h - size * 16) / 2
         dc.SetDeviceOrigin(ox, oy)
