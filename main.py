@@ -26,7 +26,7 @@ class View(wx.Panel):
         data = self.game.do_move(*move)
         self.undo.append(data)
         self.Refresh()
-        wx.CallLater(250, self.on_solve)
+        wx.CallLater(500, self.on_solve)
     def on_size(self, event):
         event.Skip()
         self.Refresh()

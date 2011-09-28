@@ -206,6 +206,10 @@ void undo_move(
     UNSET_ROBOT(game->grid[end]);
 }
 
+unsigned int _nodes;
+unsigned int _hits;
+unsigned int _inner;
+
 unsigned char _search(
     Game* game, 
     State* state, 
@@ -214,6 +218,12 @@ unsigned char _search(
     unsigned char* path,
     Set* sets) 
 {
+    if (depth == 0) {
+        _nodes = 0;
+        _hits = 0;
+        _inner = 0;
+    }
+    _nodes++;
     if (over(game, state)) {
         return depth;
     }
@@ -222,8 +232,10 @@ unsigned char _search(
     }
     unsigned int key = MAKE_KEY(state->robots);
     if (!set_add(&sets[depth], key)) {
+        _hits++;
         return 0;
     }
+    _inner++;
     for (unsigned char robot = 0; robot < 4; robot++) {
         if (depth == max_depth - 1) {
             if (robot != game->robot) {
@@ -266,6 +278,7 @@ unsigned char search(
         for (unsigned char index = 0; index < max_depth; index++) {
             set_uninit(&sets[index]);
         }
+        //printf("Depth: %u, Nodes: %u, Hits: %u, Inner: %u\n", max_depth, _nodes, _hits, _inner);
         if (result) {
             return result;
         }
