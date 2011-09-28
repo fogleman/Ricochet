@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define NORTH 0x01
 #define EAST  0x02
@@ -19,6 +20,10 @@
 #define PACK_MOVE(robot, direction) (robot << 4 | direction)
 #define UNPACK_MOVE_ROBOT(move) ((move >> 4) & 0x0f)
 #define UNPACK_MOVE_DIRECTION(move) (move & 0x0f)
+
+#define CHECK_TABLE(table, x) (table[x & 0x1fffffff] & (1 << ((x >> 29) & 7)))
+#define SET_TABLE(table, x) (table[x & 0x1fffffff] |= (1 << ((x >> 29) & 7)))
+#define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
 
 #define MAX_DEPTH 255
 
@@ -144,7 +149,8 @@ unsigned char _search(
     State* state, 
     unsigned char depth, 
     unsigned char max_depth, 
-    unsigned char* path) 
+    unsigned char* path,
+    unsigned char* table) 
 {
     if (over(game, state)) {
         return depth;
@@ -152,7 +158,11 @@ unsigned char _search(
     if (depth == max_depth) {
         return 0;
     }
-    // TODO: check memo
+    unsigned int key = MAKE_KEY(state->robots);
+    if (CHECK_TABLE(table, key)) {
+        return 0;
+    }
+    SET_TABLE(table, key);
     for (unsigned char robot = 0; robot < 4; robot++) {
         if (depth == max_depth - 1) {
             if (robot != game->robot) {
@@ -166,7 +176,7 @@ unsigned char _search(
             }
             unsigned int undo = do_move(game, state, robot, direction);
             unsigned char result = _search(
-                game, state, depth + 1, max_depth, path
+                game, state, depth + 1, max_depth, path, table
             );
             undo_move(game, state, undo);
             if (result) {
@@ -187,32 +197,12 @@ unsigned char search(
         return 0;
     }
     for (unsigned char max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        printf("%d\n", max_depth);
-        unsigned char result = _search(game, state, 0, max_depth, path);
+        unsigned char* table = calloc(0x1fffffff, sizeof(unsigned char));
+        unsigned char result = _search(game, state, 0, max_depth, path, table);
+        free(table);
         if (result) {
             return result;
         }
-    }
-    return 0;
-}
-
-int main(int argc, char* argv[]) {
-    Game game = {
-        {9, 1, 1, 3, 9, 1, 1, 1, 1, 1, 3, 9, 1, 1, 1, 3, 8, 0, 16, 0, 16, 2, 12, 0, 2, 12, 0, 0, 16, 0, 4, 2, 8, 4, 0, 0, 0, 0, 1, 16, 0, 1, 0, 0, 0, 0, 3, 10, 8, 3, 8, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 0, 0, 0, 2, 9, 0, 0, 0, 0, 6, 8, 0, 0, 0, 6, 8, 0, 6, 8, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 0, 3, 12, 0, 1, 0, 0, 0, 0, 4, 4, 0, 0, 2, 9, 0, 0, 2, 9, 0, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 0, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 4, 0, 0, 2, 8, 2, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 3, 8, 0, 6, 8, 0, 0, 0, 0, 0, 0, 0, 2, 12, 0, 0, 0, 0, 0, 3, 12, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 0, 0, 0, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 6, 10, 8, 6, 8, 0, 0, 0, 0, 0, 2, 9, 0, 0, 0, 0, 1, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 6, 12, 4, 4, 4, 6}, 
-        2, 
-        169
-    };
-    State state = {
-        {39, 20, 28, 18},
-        {0, 0, 0, 0},
-        0
-    };
-    unsigned char path[MAX_DEPTH] = {0};
-    unsigned char depth = search(&game, &state, path);
-    for (unsigned char index = 0; index < depth; index++) {
-        char* color = COLOR[UNPACK_MOVE_ROBOT(path[index])];
-        char* direction = DIRECTION[UNPACK_MOVE_DIRECTION(path[index])];
-        printf("%s %s\n", color, direction);
     }
     return 0;
 }

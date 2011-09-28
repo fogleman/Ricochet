@@ -374,14 +374,22 @@ class Game(object):
         robot = COLORS.index(self.token[0])
         last = [0] * 4
         moves = 0
+        return {
+            'grid': grid,
+            'robot': robot,
+            'token': token,
+            'robots': robots,
+            'last': last,
+            'moves': moves,
+        }
         print '    Game game = {'
         print '        {%s}, ' % ', '.join(str(x) for x in grid)
         print '        %d, ' % robot
         print '        %d' % token
         print '    };'
         print '    State state = {'
-        print '        {%s}' % ', '.join(str(x) for x in robots)
-        print '        {0, 0, 0, 0},,'
+        print '        {%s},' % ', '.join(str(x) for x in robots)
+        print '        {0, 0, 0, 0},'
         print '        0'
         print '    };'
 

@@ -1,5 +1,6 @@
 import wx
 import model
+import ricochet
 
 class View(wx.Panel):
     def __init__(self, parent, game):
@@ -13,7 +14,8 @@ class View(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
     def solve(self):
-        self.path = self.game.search()
+        #self.path = self.game.search()
+        self.path = ricochet.search(self.game)
         self.on_solve()
     def on_solve(self):
         if not self.path:
@@ -22,7 +24,7 @@ class View(wx.Panel):
         data = self.game.do_move(*move)
         self.undo.append(data)
         self.Refresh()
-        wx.CallLater(1000, self.on_solve)
+        wx.CallLater(250, self.on_solve)
     def on_size(self, event):
         event.Skip()
         self.Refresh()
