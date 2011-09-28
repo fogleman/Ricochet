@@ -26,7 +26,7 @@ class Game(Structure):
 class State(Structure):
     _fields_ = [
         ('robots', c_ubyte * 4),
-        ('last', c_ubyte * 4),
+        ('last', c_ubyte),
         ('moves', c_ubyte),
     ]
 
@@ -37,12 +37,11 @@ def search(game):
     _game.robot = data['robot']
     _game.token = data['token']
     _state.moves = data['moves']
+    _state.last = data['last']
     for index, value in enumerate(data['grid']):
         _game.grid[index] = value
     for index, value in enumerate(data['robots']):
         _state.robots[index] = value
-    for index, value in enumerate(data['last']):
-        _state.last[index] = value
     path = create_string_buffer(256)
     depth = dll.search(byref(_game), byref(_state), path)
     result = []

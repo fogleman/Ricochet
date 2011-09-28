@@ -55,7 +55,7 @@ typedef struct {
 
 typedef struct {
     unsigned char robots[4]; // 0-255
-    unsigned char last[4];   // 0-3
+    unsigned char last;
     unsigned char moves;
 } State;
 
@@ -159,7 +159,7 @@ bool can_move(
     unsigned char robot, 
     unsigned char direction) 
 {
-    if (state->last[robot] == REVERSE[direction]) {
+    if (state->last == PACK_MOVE(robot, REVERSE[direction])) {
         return false;
     }
     unsigned char index = state->robots[robot];
@@ -201,10 +201,10 @@ unsigned int do_move(
 {
     unsigned char start = state->robots[robot];
     unsigned char end = compute_move(game, state, robot, direction);
-    unsigned char last = state->last[robot];
+    unsigned char last = state->last;
     state->moves++;
     state->robots[robot] = end;
-    state->last[robot] = direction;
+    state->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
     SET_ROBOT(game->grid[end]);
     return PACK_UNDO(robot, start, last);
@@ -221,7 +221,7 @@ void undo_move(
     unsigned char end = state->robots[robot];
     state->moves--;
     state->robots[robot] = start;
-    state->last[robot] = last;
+    state->last = last;
     SET_ROBOT(game->grid[start]);
     UNSET_ROBOT(game->grid[end]);
 }
