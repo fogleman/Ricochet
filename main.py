@@ -17,6 +17,7 @@ class View(wx.Panel):
     def solve(self):
         #self.path = self.game.search()
         self.path = ricochet.search(self.game)
+        print ', '.join(''.join(move) for move in self.path)
         self.on_solve()
     def on_solve(self):
         if not self.path:

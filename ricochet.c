@@ -21,8 +21,6 @@
 #define UNPACK_MOVE_ROBOT(move) ((move >> 4) & 0x0f)
 #define UNPACK_MOVE_DIRECTION(move) (move & 0x0f)
 
-#define CHECK_TABLE(table, x) (table[x & 0x1fffffff] & (1 << ((x >> 29) & 7)))
-#define SET_TABLE(table, x) (table[x & 0x1fffffff] |= (1 << ((x >> 29) & 7)))
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
 
 #define MAX_DEPTH 255
@@ -58,8 +56,6 @@ typedef struct {
     unsigned char last;
     unsigned char moves;
 } State;
-
-
 
 typedef struct {
     unsigned int mask;
@@ -108,20 +104,6 @@ bool set_add(Set* set, unsigned int key) {
     }
 }
 
-bool set_contains(Set* set, unsigned int key) {
-    unsigned int index = hash(key) & set->mask;
-    while (true) {
-        unsigned int entry = set->data[index];
-        if (entry == key) {
-            return true;
-        }
-        if (entry == 0) {
-            return false;
-        }
-        index = (index + 1) & set->mask;
-    }
-}
-
 void set_grow(Set* set) {
     Set new_set;
     new_set.mask = (set->mask << 1) | 1;
@@ -138,8 +120,6 @@ void set_grow(Set* set) {
     set->size = new_set.size;
     set->data = new_set.data;
 }
-
-
 
 bool over(
     Game* game, 
