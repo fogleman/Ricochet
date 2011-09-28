@@ -23,6 +23,20 @@ OFFSET = {
     WEST: -1,
 }
 
+# Masks
+M_NORTH = 0x01
+M_EAST  = 0x02
+M_SOUTH = 0x04
+M_WEST  = 0x08
+M_ROBOT = 0x10
+
+M_LOOKUP = {
+    NORTH: M_NORTH,
+    EAST: M_EAST,
+    SOUTH: M_SOUTH,
+    WEST: M_WEST,
+}
+
 # Colors
 RED = 'R'
 GREEN = 'G'
@@ -189,6 +203,13 @@ def create_grid():
             result[index] = data
     return result
 
+def to_mask(cell):
+    result = 0
+    for letter, mask in M_LOOKUP.items():
+        if letter in cell:
+            result |= mask
+    return result
+
 # Game
 class Game(object):
     def __init__(self):
@@ -339,14 +360,40 @@ class Game(object):
             rows.append(''.join(row))
         rows.append('')
         return '\n'.join(rows)
+    def export(self):
+        grid = []
+        token = None
+        robots = [self.robots[color] for color in COLORS]
+        for index, cell in enumerate(self.grid):
+            mask = to_mask(cell)
+            if index in robots:
+                mask |= M_ROBOT
+            grid.append(mask)
+            if self.token in cell:
+                token = index
+        robot = COLORS.index(self.token[0])
+        last = [0] * 4
+        moves = 0
+        print '    Game game = {'
+        print '        {%s}, ' % ', '.join(str(x) for x in grid)
+        print '        %d, ' % robot
+        print '        %d' % token
+        print '    };'
+        print '    State state = {'
+        print '        {%s}' % ', '.join(str(x) for x in robots)
+        print '        {0, 0, 0, 0},,'
+        print '        0'
+        print '    };'
 
 # Main
 def main():
     game = Game()
+    game.export()
     print 'Token:', game.token
-    print game
+    #print game
     path = game.search()
     print 'Solution:', path
+    return
     for move in path:
         game.do_move(*move)
         print 'Move:', move
