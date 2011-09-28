@@ -1,4 +1,5 @@
 import wx
+import sys
 import model
 import ricochet
 
@@ -123,15 +124,16 @@ class View(wx.Panel):
         dc.DrawText(str(self.game.moves), wall + 1, wall + 1)
 
 class Frame(wx.Frame):
-    def __init__(self):
+    def __init__(self, seed=None):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robots!')
-        self.view = View(self, model.Game())
+        self.view = View(self, model.Game(seed))
         self.view.SetSize((800, 800))
         self.Fit()
 
 def main():
     app = wx.PySimpleApp()
-    frame = Frame()
+    seed = int(sys.argv[1]) if len(sys.argv) == 2 else None
+    frame = Frame(seed)
     frame.Center()
     frame.Show()
     app.MainLoop()
