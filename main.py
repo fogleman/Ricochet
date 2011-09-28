@@ -100,6 +100,9 @@ class View(wx.Panel):
                 if self.game.token in cell:
                     dc.SetBrush(brushes[self.game.token[0]])
                     dc.DrawRectangle(x, y, size + 1, size + 1)
+                if i in (7, 8) and j in (7, 8):
+                    dc.SetBrush(wx.LIGHT_GREY_BRUSH)
+                    dc.DrawRectangle(x, y, size + 1, size + 1)
                 # robot
                 if robot:
                     dc.SetBrush(brushes[robot])

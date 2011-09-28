@@ -228,6 +228,8 @@ class Game(object):
                 index = random.randint(0, 255)
                 if index in (119, 120, 135, 136):
                     continue
+                if self.grid[index][-2:] in TOKENS:
+                    continue
                 if index in used:
                     continue
                 result[color] = index
