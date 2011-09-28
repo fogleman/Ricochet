@@ -212,7 +212,9 @@ def to_mask(cell):
 
 # Game
 class Game(object):
-    def __init__(self):
+    def __init__(self, seed=None):
+        if seed:
+            random.seed(seed)
         self.grid = create_grid()
         self.robots = self.place_robots()
         self.token = random.choice(TOKENS)

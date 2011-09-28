@@ -52,3 +52,23 @@ def search(game):
         direction = DIRECTIONS[value & 0x0f]
         result.append((color, direction))
     return result
+
+if __name__ == '__main__':
+    import model
+    import time
+    import random
+    count = 0
+    best = (0, 0)
+    while True:
+        count += 1
+        seed = random.randint(0, 0x7fffffff)
+        start = time.clock()
+        path = search(model.Game(seed))
+        moves = len(path)
+        key = (moves, seed)
+        if key > best:
+            best = key
+        path = [''.join(move) for move in path]
+        path = ', '.join(path)
+        duration = time.clock() - start
+        print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
