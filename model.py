@@ -226,7 +226,7 @@ class Game(object):
         for color in COLORS:
             while True:
                 index = random.randint(0, 255)
-                if self.grid[index] != 'X':
+                if index in (119, 120, 135, 136):
                     continue
                 if index in used:
                     continue
