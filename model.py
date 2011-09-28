@@ -219,7 +219,7 @@ class Game(object):
         self.robots = self.place_robots()
         self.token = random.choice(TOKENS)
         self.moves = 0
-        self.last = dict((color, None) for color in COLORS)
+        self.last = None
     def place_robots(self):
         result = {}
         used = set()
@@ -250,7 +250,7 @@ class Game(object):
                 return value
         return None
     def can_move(self, color, direction):
-        if self.last[color] == REVERSE[direction]:
+        if self.last == (color, REVERSE[direction]):
             return False
         index = self.robots[color]
         if direction in self.grid[index]:
@@ -272,21 +272,21 @@ class Game(object):
         return index
     def do_move(self, color, direction):
         start = self.robots[color]
-        last = self.last[color]
-        if last == REVERSE[direction]:
+        last = self.last
+        if last == (color, REVERSE[direction]):
             raise Exception
         end = self.compute_move(color, direction)
         if start == end:
             raise Exception
         self.moves += 1
         self.robots[color] = end
-        self.last[color] = direction
+        self.last = (color, direction)
         return (color, start, last)
     def undo_move(self, data):
         color, start, last = data
         self.moves -= 1
         self.robots[color] = start
-        self.last[color] = last
+        self.last = last
     def get_moves(self, colors=None):
         result = []
         colors = colors or COLORS
@@ -374,7 +374,7 @@ class Game(object):
             if self.token in cell:
                 token = index
         robot = COLORS.index(self.token[0])
-        last = [0] * 4
+        last = 0
         moves = 0
         return {
             'grid': grid,
@@ -384,26 +384,14 @@ class Game(object):
             'last': last,
             'moves': moves,
         }
-        print '    Game game = {'
-        print '        {%s}, ' % ', '.join(str(x) for x in grid)
-        print '        %d, ' % robot
-        print '        %d' % token
-        print '    };'
-        print '    State state = {'
-        print '        {%s},' % ', '.join(str(x) for x in robots)
-        print '        {0, 0, 0, 0},'
-        print '        0'
-        print '    };'
 
 # Main
 def main():
     game = Game()
-    game.export()
     print 'Token:', game.token
-    #print game
+    print game
     path = game.search()
     print 'Solution:', path
-    return
     for move in path:
         game.do_move(*move)
         print 'Move:', move

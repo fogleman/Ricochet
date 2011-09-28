@@ -26,7 +26,7 @@ class Game(Structure):
 class State(Structure):
     _fields_ = [
         ('robots', c_ubyte * 4),
-        ('last', c_ubyte * 4),
+        ('last', c_ubyte),
         ('moves', c_ubyte),
     ]
 
@@ -37,12 +37,11 @@ def search(game):
     _game.robot = data['robot']
     _game.token = data['token']
     _state.moves = data['moves']
+    _state.last = data['last']
     for index, value in enumerate(data['grid']):
         _game.grid[index] = value
     for index, value in enumerate(data['robots']):
         _state.robots[index] = value
-    for index, value in enumerate(data['last']):
-        _state.last[index] = value
     path = create_string_buffer(256)
     depth = dll.search(byref(_game), byref(_state), path)
     result = []
@@ -57,14 +56,17 @@ if __name__ == '__main__':
     import model
     import time
     import random
+    import collections
     count = 0
     best = (0, 0)
+    hist = collections.defaultdict(int)
     while True:
         count += 1
         seed = random.randint(0, 0x7fffffff)
         start = time.clock()
         path = search(model.Game(seed))
         moves = len(path)
+        hist[moves] += 1
         key = (moves, seed)
         if key > best:
             best = key
@@ -72,3 +74,4 @@ if __name__ == '__main__':
         path = ', '.join(path)
         duration = time.clock() - start
         print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
+        print dict(hist)
