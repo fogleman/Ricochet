@@ -59,6 +59,88 @@ typedef struct {
     unsigned char moves;
 } State;
 
+
+
+typedef struct {
+    unsigned int mask;
+    unsigned int size;
+    unsigned int* data;
+} Set;
+
+unsigned int hash(unsigned int key) {
+    key = ~key + (key << 15);
+    key = key ^ (key >> 12);
+    key = key + (key << 2);
+    key = key ^ (key >> 4);
+    key = key * 2057;
+    key = key ^ (key >> 16);
+    return key;
+}
+
+void set_init(Set* set) {
+    set->mask = 0xfff;
+    set->size = 0;
+    set->data = calloc(set->mask + 1, sizeof(unsigned int));
+}
+
+void set_uninit(Set* set) {
+    free(set->data);
+}
+
+void set_grow(Set* set);
+
+bool set_add(Set* set, unsigned int key) {
+    if (set->size * 2 > set->mask) {
+        set_grow(set);
+    }
+    unsigned int index = hash(key) & set->mask;
+    while (true) {
+        unsigned int entry = set->data[index];
+        if (entry == key) {
+            return false;
+        }
+        if (entry == 0) {
+            set->size++;
+            set->data[index] = key;
+            return true;
+        }
+        index = (index + 1) & set->mask;
+    }
+}
+
+bool set_contains(Set* set, unsigned int key) {
+    unsigned int index = hash(key) & set->mask;
+    while (true) {
+        unsigned int entry = set->data[index];
+        if (entry == key) {
+            return true;
+        }
+        if (entry == 0) {
+            return false;
+        }
+        index = (index + 1) & set->mask;
+    }
+}
+
+void set_grow(Set* set) {
+    Set new_set;
+    new_set.mask = (set->mask << 1) | 1;
+    new_set.size = 0;
+    new_set.data = calloc(new_set.mask + 1, sizeof(unsigned int));
+    for (unsigned int index = 0; index <= set->mask; index++) {
+        unsigned int key = set->data[index];
+        if (key != 0) {
+            set_add(&new_set, key);
+        }
+    }
+    free(set->data);
+    set->mask = new_set.mask;
+    set->size = new_set.size;
+    set->data = new_set.data;
+}
+
+
+
 bool over(
     Game* game, 
     State* state) 
@@ -150,7 +232,7 @@ unsigned char _search(
     unsigned char depth, 
     unsigned char max_depth, 
     unsigned char* path,
-    unsigned char* table) 
+    Set* sets) 
 {
     if (over(game, state)) {
         return depth;
@@ -159,10 +241,9 @@ unsigned char _search(
         return 0;
     }
     unsigned int key = MAKE_KEY(state->robots);
-    if (CHECK_TABLE(table, key)) {
+    if (!set_add(&sets[depth], key)) {
         return 0;
     }
-    SET_TABLE(table, key);
     for (unsigned char robot = 0; robot < 4; robot++) {
         if (depth == max_depth - 1) {
             if (robot != game->robot) {
@@ -176,7 +257,7 @@ unsigned char _search(
             }
             unsigned int undo = do_move(game, state, robot, direction);
             unsigned char result = _search(
-                game, state, depth + 1, max_depth, path, table
+                game, state, depth + 1, max_depth, path, sets
             );
             undo_move(game, state, undo);
             if (result) {
@@ -197,9 +278,14 @@ unsigned char search(
         return 0;
     }
     for (unsigned char max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        unsigned char* table = calloc(0x1fffffff, sizeof(unsigned char));
-        unsigned char result = _search(game, state, 0, max_depth, path, table);
-        free(table);
+        Set sets[max_depth];
+        for (unsigned char index = 0; index < max_depth; index++) {
+            set_init(&sets[index]);
+        }
+        unsigned char result = _search(game, state, 0, max_depth, path, sets);
+        for (unsigned char index = 0; index < max_depth; index++) {
+            set_uninit(&sets[index]);
+        }
         if (result) {
             return result;
         }
