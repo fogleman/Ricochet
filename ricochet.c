@@ -125,11 +125,11 @@ bool can_move(
     unsigned char robot, 
     unsigned char direction) 
 {
-    if (game->last == PACK_MOVE(robot, REVERSE[direction])) {
-        return false;
-    }
     unsigned char index = game->robots[robot];
     if (HAS_WALL(game->grid[index], direction)) {
+        return false;
+    }
+    if (game->last == PACK_MOVE(robot, REVERSE[direction])) {
         return false;
     }
     unsigned char new_index = index + OFFSET[direction];
