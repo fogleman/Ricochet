@@ -19,31 +19,24 @@ dll = CDLL('_ricochet')
 class Game(Structure):
     _fields_ = [
         ('grid', c_ubyte * 256),
+        ('robots', c_ubyte * 4),
         ('robot', c_ubyte),
         ('token', c_ubyte),
-    ]
-
-class State(Structure):
-    _fields_ = [
-        ('robots', c_ubyte * 4),
         ('last', c_ubyte),
-        ('moves', c_ubyte),
     ]
 
 def search(game):
     data = game.export()
-    _game = Game()
-    _state = State()
-    _game.robot = data['robot']
-    _game.token = data['token']
-    _state.moves = data['moves']
-    _state.last = data['last']
+    game = Game()
+    game.robot = data['robot']
+    game.token = data['token']
+    game.last = data['last']
     for index, value in enumerate(data['grid']):
-        _game.grid[index] = value
+        game.grid[index] = value
     for index, value in enumerate(data['robots']):
-        _state.robots[index] = value
+        game.robots[index] = value
     path = create_string_buffer(256)
-    depth = dll.search(byref(_game), byref(_state), path)
+    depth = dll.search(byref(game), path)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)
@@ -74,4 +67,4 @@ if __name__ == '__main__':
         path = ', '.join(path)
         duration = time.clock() - start
         print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
-        print dict(hist)
+        #print dict(hist)

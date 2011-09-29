@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_DEPTH 64
+
 #define NORTH 0x01
 #define EAST  0x02
 #define SOUTH 0x04
@@ -12,30 +14,16 @@
 #define SET_ROBOT(x) (x |= ROBOT)
 #define UNSET_ROBOT(x) (x &= ~ROBOT)
 
+#define PACK_MOVE(robot, direction) (robot << 4 | direction)
 #define PACK_UNDO(robot, start, last) (robot << 16 | start << 8 | last)
 #define UNPACK_ROBOT(undo) ((undo >> 16) & 0xff)
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
 #define UNPACK_LAST(undo) (undo & 0xff)
-
-#define PACK_MOVE(robot, direction) (robot << 4 | direction)
-#define UNPACK_MOVE_ROBOT(move) ((move >> 4) & 0x0f)
-#define UNPACK_MOVE_DIRECTION(move) (move & 0x0f)
-
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
-
-#define MAX_DEPTH 255
 
 #define bool unsigned char
 #define true 1
 #define false 0
-
-char* DIRECTION[] = {
-    "", "NORTH", "EAST", "", "SOUTH", "", "", "", "WEST"
-};
-
-char* COLOR[] = {
-    "RED", "GREEN", "BLUE", "YELLOW"
-};
 
 unsigned char REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
@@ -47,15 +35,11 @@ unsigned char OFFSET[] = {
 
 typedef struct {
     unsigned char grid[256];
-    unsigned char robot; // 0-3
-    unsigned char token; // 0-255
-} Game;
-
-typedef struct {
-    unsigned char robots[4]; // 0-255
+    unsigned char robots[4];
+    unsigned char robot;
+    unsigned char token;
     unsigned char last;
-    unsigned char moves;
-} State;
+} Game;
 
 typedef struct {
     unsigned int mask;
@@ -73,14 +57,20 @@ unsigned int hash(unsigned int key) {
     return key;
 }
 
-void set_init(Set* set) {
-    set->mask = 0xfff;
-    set->size = 0;
-    set->data = calloc(set->mask + 1, sizeof(unsigned int));
+void set_init(Set* set, unsigned int count) {
+    for (unsigned int i = 0; i < count; i++) {
+        set->mask = 0xfff;
+        set->size = 0;
+        set->data = calloc(set->mask + 1, sizeof(unsigned int));
+        set++;
+    }
 }
 
-void set_uninit(Set* set) {
-    free(set->data);
+void set_uninit(Set* set, unsigned int count) {
+    for (unsigned int i = 0; i < count; i++) {
+        free(set->data);
+        set++;
+    }
 }
 
 void set_grow(Set* set);
@@ -121,11 +111,8 @@ void set_grow(Set* set) {
     set->data = new_set.data;
 }
 
-bool over(
-    Game* game, 
-    State* state) 
-{
-    if (state->robots[game->robot] == game->token) {
+bool game_over(Game* game) {
+    if (game->robots[game->robot] == game->token) {
         return true;
     }
     else {
@@ -135,14 +122,13 @@ bool over(
 
 bool can_move(
     Game* game, 
-    State* state, 
     unsigned char robot, 
     unsigned char direction) 
 {
-    if (state->last == PACK_MOVE(robot, REVERSE[direction])) {
+    if (game->last == PACK_MOVE(robot, REVERSE[direction])) {
         return false;
     }
-    unsigned char index = state->robots[robot];
+    unsigned char index = game->robots[robot];
     if (HAS_WALL(game->grid[index], direction)) {
         return false;
     }
@@ -155,11 +141,10 @@ bool can_move(
 
 unsigned char compute_move(
     Game* game, 
-    State* state, 
     unsigned char robot, 
     unsigned char direction) 
 {
-    unsigned char index = state->robots[robot];
+    unsigned char index = game->robots[robot];
     while (true) {
         if (HAS_WALL(game->grid[index], direction)) {
             break;
@@ -175,16 +160,14 @@ unsigned char compute_move(
 
 unsigned int do_move(
     Game* game, 
-    State* state, 
     unsigned char robot, 
     unsigned char direction) 
 {
-    unsigned char start = state->robots[robot];
-    unsigned char end = compute_move(game, state, robot, direction);
-    unsigned char last = state->last;
-    state->moves++;
-    state->robots[robot] = end;
-    state->last = PACK_MOVE(robot, direction);
+    unsigned char start = game->robots[robot];
+    unsigned char end = compute_move(game, robot, direction);
+    unsigned char last = game->last;
+    game->robots[robot] = end;
+    game->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
     SET_ROBOT(game->grid[end]);
     return PACK_UNDO(robot, start, last);
@@ -192,16 +175,14 @@ unsigned int do_move(
 
 void undo_move(
     Game* game, 
-    State* state, 
     unsigned int undo) 
 {
     unsigned char robot = UNPACK_ROBOT(undo);
     unsigned char start = UNPACK_START(undo);
     unsigned char last = UNPACK_LAST(undo);
-    unsigned char end = state->robots[robot];
-    state->moves--;
-    state->robots[robot] = start;
-    state->last = last;
+    unsigned char end = game->robots[robot];
+    game->robots[robot] = start;
+    game->last = last;
     SET_ROBOT(game->grid[start]);
     UNSET_ROBOT(game->grid[end]);
 }
@@ -212,7 +193,6 @@ unsigned int _inner;
 
 unsigned char _search(
     Game* game, 
-    State* state, 
     unsigned char depth, 
     unsigned char max_depth, 
     unsigned char* path,
@@ -224,14 +204,13 @@ unsigned char _search(
         _inner = 0;
     }
     _nodes++;
-    if (over(game, state)) {
+    if (game_over(game)) {
         return depth;
     }
     if (depth == max_depth) {
         return 0;
     }
-    unsigned int key = MAKE_KEY(state->robots);
-    if (!set_add(&sets[depth], key)) {
+    if (!set_add(&sets[depth], MAKE_KEY(game->robots))) {
         _hits++;
         return 0;
     }
@@ -244,14 +223,14 @@ unsigned char _search(
         }
         for (unsigned char shift = 0; shift < 4; shift++) {
             unsigned char direction = 1 << shift;
-            if (!can_move(game, state, robot, direction)) {
+            if (!can_move(game, robot, direction)) {
                 continue;
             }
-            unsigned int undo = do_move(game, state, robot, direction);
+            unsigned int undo = do_move(game, robot, direction);
             unsigned char result = _search(
-                game, state, depth + 1, max_depth, path, sets
+                game, depth + 1, max_depth, path, sets
             );
-            undo_move(game, state, undo);
+            undo_move(game, undo);
             if (result) {
                 path[depth] = PACK_MOVE(robot, direction);
                 return result;
@@ -263,22 +242,18 @@ unsigned char _search(
 
 unsigned char search(
     Game* game, 
-    State* state, 
     unsigned char* path) 
 {
-    if (over(game, state)) {
+    if (game_over(game)) {
         return 0;
     }
+    Set sets[MAX_DEPTH];
     for (unsigned char max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        Set sets[max_depth];
-        for (unsigned char index = 0; index < max_depth; index++) {
-            set_init(&sets[index]);
-        }
-        unsigned char result = _search(game, state, 0, max_depth, path, sets);
-        for (unsigned char index = 0; index < max_depth; index++) {
-            set_uninit(&sets[index]);
-        }
-        //printf("Depth: %u, Nodes: %u, Hits: %u, Inner: %u\n", max_depth, _nodes, _hits, _inner);
+        set_init(sets, max_depth);
+        unsigned char result = _search(game, 0, max_depth, path, sets);
+        set_uninit(sets, max_depth);
+        //printf("Depth: %u, Nodes: %u, Hits: %u, Inner: %u\n", 
+        //    max_depth, _nodes, _hits, _inner);
         if (result) {
             return result;
         }
