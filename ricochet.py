@@ -25,7 +25,10 @@ class Game(Structure):
         ('last', c_ubyte),
     ]
 
-def search(game):
+CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)
+
+def search(game, callback=None):
+    callback = CALLBACK_FUNC(callback) if callback else None
     data = game.export()
     game = Game()
     game.robot = data['robot']
@@ -36,7 +39,7 @@ def search(game):
     for index, value in enumerate(data['robots']):
         game.robots[index] = value
     path = create_string_buffer(256)
-    depth = dll.search(byref(game), path)
+    depth = dll.search(byref(game), path, callback)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)
@@ -53,11 +56,13 @@ if __name__ == '__main__':
     count = 0
     best = (0, 0)
     hist = collections.defaultdict(int)
+    def callback(depth, nodes, inner, hits):
+        print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
     while True:
         count += 1
         seed = random.randint(0, 0x7fffffff)
         start = time.clock()
-        path = search(model.Game(seed))
+        path = search(model.Game(seed), callback)
         moves = len(path)
         hist[moves] += 1
         key = (moves, seed)

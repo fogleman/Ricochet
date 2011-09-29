@@ -21,7 +21,7 @@
 #define UNPACK_LAST(undo) (undo & 0xff)
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
 
-#define bool unsigned char
+#define bool unsigned int
 #define true 1
 #define false 0
 
@@ -57,7 +57,7 @@ unsigned int hash(unsigned int key) {
     return key;
 }
 
-void set_init(Set* set, unsigned int count) {
+void set_alloc(Set* set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
@@ -66,7 +66,7 @@ void set_init(Set* set, unsigned int count) {
     }
 }
 
-void set_uninit(Set* set, unsigned int count) {
+void set_free(Set* set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         free(set->data);
         set++;
@@ -191,10 +191,10 @@ unsigned int _nodes;
 unsigned int _hits;
 unsigned int _inner;
 
-unsigned char _search(
+unsigned int _search(
     Game* game, 
-    unsigned char depth, 
-    unsigned char max_depth, 
+    unsigned int depth, 
+    unsigned int max_depth, 
     unsigned char* path,
     Set* sets) 
 {
@@ -210,11 +210,11 @@ unsigned char _search(
     if (depth == max_depth) {
         return 0;
     }
+    _inner++;
     if (!set_add(&sets[depth], MAKE_KEY(game->robots))) {
         _hits++;
         return 0;
     }
-    _inner++;
     for (unsigned char robot = 0; robot < 4; robot++) {
         if (depth == max_depth - 1) {
             if (robot != game->robot) {
@@ -227,7 +227,7 @@ unsigned char _search(
                 continue;
             }
             unsigned int undo = do_move(game, robot, direction);
-            unsigned char result = _search(
+            unsigned int result = _search(
                 game, depth + 1, max_depth, path, sets
             );
             undo_move(game, undo);
@@ -240,20 +240,22 @@ unsigned char _search(
     return 0;
 }
 
-unsigned char search(
+unsigned int search(
     Game* game, 
-    unsigned char* path) 
+    unsigned char* path,
+    void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int)) 
 {
     if (game_over(game)) {
         return 0;
     }
     Set sets[MAX_DEPTH];
-    for (unsigned char max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        set_init(sets, max_depth);
-        unsigned char result = _search(game, 0, max_depth, path, sets);
-        set_uninit(sets, max_depth);
-        //printf("Depth: %u, Nodes: %u, Hits: %u, Inner: %u\n", 
-        //    max_depth, _nodes, _hits, _inner);
+    for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
+        set_alloc(sets, max_depth);
+        unsigned int result = _search(game, 0, max_depth, path, sets);
+        set_free(sets, max_depth);
+        if (callback) {
+            callback(max_depth, _nodes, _inner, _hits);
+        }
         if (result) {
             return result;
         }

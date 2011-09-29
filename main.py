@@ -16,9 +16,11 @@ class View(wx.Panel):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
     def solve(self):
         #self.path = self.game.search()
-        self.path = ricochet.search(self.game)
+        self.path = ricochet.search(self.game, self.callback)
         print ', '.join(''.join(move) for move in self.path)
         self.on_solve()
+    def callback(self, depth, nodes, inner, hits):
+        print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
     def on_solve(self):
         if not self.path:
             return
