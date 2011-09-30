@@ -241,16 +241,6 @@ class Game(object):
             if position == index:
                 return color
         return None
-    def get_color(self, index):
-        for value in self.grid[index]:
-            if value in COLORS:
-                return value
-        return None
-    def get_shape(self, index):
-        for value in self.grid[index]:
-            if value in SHAPES:
-                return value
-        return None
     def can_move(self, color, direction):
         if self.last == (color, REVERSE[direction]):
             return False
@@ -333,37 +323,6 @@ class Game(object):
             if result:
                 return result
         return None
-    def __str__(self):
-        rows = []
-        for y in range(16):
-            row = []
-            for x in range(16):
-                index = idx(x, y)
-                row.append(' ')
-                if NORTH in self.grid[index] and y > 0:
-                    row.append('_')
-                else:
-                    row.append(' ')
-            rows.append(''.join(row))
-            row = []
-            for x in range(16):
-                index = idx(x, y)
-                if WEST in self.grid[index] and x > 0:
-                    row.append('|')
-                else:
-                    row.append(' ')
-                for color, position in self.robots.iteritems():
-                    if position == index:
-                        row.append(color)
-                        break
-                else:
-                    if self.token in self.grid[index]:
-                        row.append('*')
-                    else:
-                        row.append('.')
-            rows.append(''.join(row))
-        rows.append('')
-        return '\n'.join(rows)
     def export(self):
         grid = []
         token = None
@@ -386,19 +345,3 @@ class Game(object):
             'last': last,
             'moves': moves,
         }
-
-# Main
-def main():
-    game = Game()
-    print 'Token:', game.token
-    print game
-    path = game.search()
-    print 'Solution:', path
-    for move in path:
-        game.do_move(*move)
-        print 'Move:', move
-        print game
-    print 'Solution:', path
-
-if __name__ == '__main__':
-    main()

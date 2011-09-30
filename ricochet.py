@@ -62,7 +62,7 @@ if __name__ == '__main__':
         count += 1
         seed = random.randint(0, 0x7fffffff)
         start = time.clock()
-        path = search(model.Game(seed), callback)
+        path = search(model.Game(seed))#, callback)
         moves = len(path)
         hist[moves] += 1
         key = (moves, seed)
