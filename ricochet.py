@@ -58,9 +58,11 @@ if __name__ == '__main__':
     hist = collections.defaultdict(int)
     def callback(depth, nodes, inner, hits):
         print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
+    seed = 0
     while True:
         count += 1
-        seed = random.randint(0, 0x7fffffff)
+        #seed = random.randint(0, 0x7fffffff)
+        seed += 1
         start = time.clock()
         path = search(model.Game(seed))#, callback)
         moves = len(path)
@@ -71,5 +73,6 @@ if __name__ == '__main__':
         path = [''.join(move) for move in path]
         path = ', '.join(path)
         duration = time.clock() - start
-        print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
+        #print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
         #print dict(hist)
+        print '%d %2d [%s]' % (seed, moves, path)
