@@ -71,8 +71,8 @@ if __name__ == '__main__':
         if key > best:
             best = key
         path = [''.join(move) for move in path]
-        path = ', '.join(path)
+        path = ','.join(path)
         duration = time.clock() - start
         #print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
         #print dict(hist)
-        print '%d %2d [%s]' % (seed, moves, path)
+        print '%d %d [%s]' % (seed, moves, path)
