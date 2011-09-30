@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_DEPTH 64
+#define MAX_DEPTH 32
 
 #define NORTH 0x01
 #define EAST  0x02
@@ -211,7 +211,7 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    if (!set_add(&sets[depth], MAKE_KEY(game->robots))) {
+    if (!set_add(&sets[max_depth - depth - 1], MAKE_KEY(game->robots))) {
         _hits++;
         return 0;
     }
@@ -248,17 +248,18 @@ unsigned int search(
     if (game_over(game)) {
         return 0;
     }
+    unsigned int result = 0;
     Set sets[MAX_DEPTH];
+    set_alloc(sets, MAX_DEPTH);
     for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        set_alloc(sets, max_depth);
-        unsigned int result = _search(game, 0, max_depth, path, sets);
-        set_free(sets, max_depth);
+        result = _search(game, 0, max_depth, path, sets);
         if (callback) {
             callback(max_depth, _nodes, _inner, _hits);
         }
         if (result) {
-            return result;
+            break;
         }
     }
-    return 0;
+    set_free(sets, MAX_DEPTH);
+    return result;
 }
