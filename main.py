@@ -10,6 +10,7 @@ class View(wx.Panel):
         self.color = None
         self.path = None
         self.undo = []
+        self.lines = []
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -24,11 +25,18 @@ class View(wx.Panel):
     def on_solve(self):
         if not self.path:
             return
-        move = self.path.pop(0)
-        data = self.game.do_move(*move)
-        self.undo.append(data)
+        self.do_move(*self.path.pop(0))
         self.Refresh()
         wx.CallLater(500, self.on_solve)
+    def do_move(self, color, direction):
+        start = self.game.robots[color]
+        end = self.game.compute_move(color, direction)
+        data = self.game.do_move(color, direction)
+        self.undo.append(data)
+        self.lines.append((color, start, end))
+    def undo_move(self):
+        self.game.undo_move(self.undo.pop(-1))
+        self.lines.pop(-1)
     def on_size(self, event):
         event.Skip()
         self.Refresh()
@@ -43,12 +51,12 @@ class View(wx.Panel):
             elif value == 'S':
                 self.solve()
             elif value == 'U' and self.undo:
-                data = self.undo.pop(-1)
-                self.game.undo_move(data)
+                self.undo_move()
                 self.Refresh()
             elif value == 'N':
                 self.path = None
                 self.undo = []
+                self.lines = []
                 self.game = model.Game()
                 self.Refresh()
         elif self.color:
@@ -62,17 +70,16 @@ class View(wx.Panel):
                 color = self.color
                 direction = lookup[code]
                 try:
-                    data = self.game.do_move(color, direction)
-                    self.undo.append(data)
+                    self.do_move(color, direction)
                 except Exception:
                     pass
                 self.Refresh()
     def on_paint(self, event):
-        brushes = {
-            model.RED: wx.Brush(wx.Colour(255, 0, 0)),
-            model.GREEN: wx.Brush(wx.Colour(0, 255, 0)),
-            model.BLUE: wx.Brush(wx.Colour(0, 0, 255)),
-            model.YELLOW: wx.Brush(wx.Colour(255, 255, 0)),
+        colors = {
+            model.RED: wx.Colour(178, 34, 34),
+            model.GREEN: wx.Colour(50, 205, 50),
+            model.BLUE: wx.Colour(65, 105, 225),
+            model.YELLOW: wx.Colour(255, 215, 0),
         }
         dc = wx.AutoBufferedPaintDC(self)
         dc.SetBackground(wx.LIGHT_GREY_BRUSH)
@@ -87,6 +94,13 @@ class View(wx.Panel):
         dc.SetClippingRegion(0, 0, size * 16 + 1, size * 16 + 1)
         dc.SetBrush(wx.WHITE_BRUSH)
         dc.DrawRectangle(0, 0, size * 16 + 1, size * 16 + 1)
+        for color, start, end in self.lines:
+            dc.SetPen(wx.Pen(colors[color], 3, wx.DOT))
+            x1, y1 = model.xy(start)
+            x1, y1 = x1 * size + size / 2, y1 * size + size / 2
+            x2, y2 = model.xy(end)
+            x2, y2 = x2 * size + size / 2, y2 * size + size / 2
+            dc.DrawLine(x1, y1, x2, y2)
         for j in range(16):
             for i in range(16):
                 x = i * size
@@ -100,14 +114,14 @@ class View(wx.Panel):
                 dc.DrawRectangle(x, y, size + 1, size + 1)
                 # token
                 if self.game.token in cell:
-                    dc.SetBrush(brushes[self.game.token[0]])
+                    dc.SetBrush(wx.Brush(colors[self.game.token[0]]))
                     dc.DrawRectangle(x, y, size + 1, size + 1)
                 if i in (7, 8) and j in (7, 8):
                     dc.SetBrush(wx.LIGHT_GREY_BRUSH)
                     dc.DrawRectangle(x, y, size + 1, size + 1)
                 # robot
                 if robot:
-                    dc.SetBrush(brushes[robot])
+                    dc.SetBrush(wx.Brush(colors[robot]))
                     dc.DrawCircle(x + size / 2, y + size / 2, size / 3)
                 # walls
                 dc.SetBrush(wx.BLACK_BRUSH)
@@ -131,7 +145,7 @@ class View(wx.Panel):
 
 class Frame(wx.Frame):
     def __init__(self, seed=None):
-        wx.Frame.__init__(self, None, -1, 'Ricochet Robots!')
+        wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
         self.view = View(self, model.Game(seed))
         self.view.SetSize((800, 800))
         self.Fit()
