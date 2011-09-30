@@ -335,13 +335,9 @@ class Game(object):
             if self.token in cell:
                 token = index
         robot = COLORS.index(self.token[0])
-        last = 0
-        moves = 0
         return {
             'grid': grid,
             'robot': robot,
             'token': token,
             'robots': robots,
-            'last': last,
-            'moves': moves,
         }

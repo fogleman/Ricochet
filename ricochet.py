@@ -33,7 +33,7 @@ def search(game, callback=None):
     game = Game()
     game.robot = data['robot']
     game.token = data['token']
-    game.last = data['last']
+    game.last = 0
     for index, value in enumerate(data['grid']):
         game.grid[index] = value
     for index, value in enumerate(data['robots']):
