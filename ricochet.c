@@ -47,6 +47,33 @@ typedef struct {
     unsigned int* data;
 } Set;
 
+void swap(unsigned char* array, unsigned int a, unsigned int b) {
+    unsigned char temp = array[a];
+    array[a] = array[b];
+    array[b] = temp;
+}
+
+unsigned int make_key(Game* game) {
+    unsigned char robots[4];
+    unsigned int index = 0;
+    robots[index++] = game->robots[game->robot];
+    for (unsigned int i = 0; i < 4; i++) {
+        if (i != game->robot) {
+            robots[index++] = game->robots[i];
+        }
+    }
+    if (robots[1] > robots[2]) {
+        swap(robots, 1, 2);
+    }
+    if (robots[2] > robots[3]) {
+        swap(robots, 2, 3);
+    }
+    if (robots[1] > robots[2]) {
+        swap(robots, 1, 2);
+    }
+    return MAKE_KEY(robots);
+}
+
 unsigned int hash(unsigned int key) {
     key = ~key + (key << 15);
     key = key ^ (key >> 12);
@@ -211,7 +238,7 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    if (!set_add(&sets[max_depth - depth - 1], MAKE_KEY(game->robots))) {
+    if (!set_add(&sets[max_depth - depth - 1], make_key(game))) {
         _hits++;
         return 0;
     }
@@ -264,6 +291,15 @@ unsigned int search(
     return result;
 }
 
+void _callback(
+    unsigned int depth, 
+    unsigned int nodes, 
+    unsigned int inner, 
+    unsigned int hits) 
+{
+    printf("%u %u %u %u\n", depth, nodes, inner, hits);
+}
+
 int main(int argc, char* argv[]) {
     Game game = {
         {9, 1, 5, 1, 3, 9, 1, 1, 1, 3, 9, 1, 1, 1, 1, 3, 8, 2, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 3, 8, 0, 0, 0, 0, 2, 12, 0, 2, 9, 0, 0, 0, 0, 4, 2, 12, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 10, 9, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 6, 8, 0, 0, 0, 0, 4, 4, 0, 0, 2, 12, 0, 0, 2, 8, 1, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 1, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 0, 0, 0, 6, 8, 18, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 4, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0, 2, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 2, 12, 2, 8, 0, 0, 16, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 8, 6, 8, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0, 0, 16, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 4, 6, 12, 4, 4, 6},
@@ -273,5 +309,5 @@ int main(int argc, char* argv[]) {
         0
     };
     unsigned char path[32];
-    search(&game, path, 0);
+    search(&game, path, _callback);
 }
