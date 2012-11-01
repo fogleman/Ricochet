@@ -88,7 +88,7 @@ void set_alloc(Set* set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
-        set->data = calloc(set->mask + 1, sizeof(unsigned int));
+        set->data = (unsigned int*) calloc(set->mask + 1, sizeof(unsigned int));
         set++;
     }
 }
@@ -125,7 +125,7 @@ void set_grow(Set* set) {
     Set new_set;
     new_set.mask = (set->mask << 1) | 1;
     new_set.size = 0;
-    new_set.data = calloc(new_set.mask + 1, sizeof(unsigned int));
+    new_set.data = (unsigned int*) calloc(new_set.mask + 1, sizeof(unsigned int));
     for (unsigned int index = 0; index <= set->mask; index++) {
         unsigned int key = set->data[index];
         if (key != 0) {
