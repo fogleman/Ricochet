@@ -47,13 +47,13 @@ typedef struct {
     unsigned int* data;
 } Set;
 
-void swap(unsigned char* array, unsigned int a, unsigned int b) {
+inline void swap(unsigned char* array, unsigned int a, unsigned int b) {
     unsigned char temp = array[a];
     array[a] = array[b];
     array[b] = temp;
 }
 
-unsigned int make_key(Game* game) {
+inline unsigned int make_key(Game* game) {
     unsigned char robots[4];
     unsigned int index = 0;
     robots[index++] = game->robots[game->robot];
@@ -123,7 +123,7 @@ bool set_add(Set* set, unsigned int key) {
 
 void set_grow(Set* set) {
     Set new_set;
-    new_set.mask = (set->mask << 1) | 1;
+    new_set.mask = (set->mask << 2) | 3;
     new_set.size = 0;
     new_set.data = calloc(new_set.mask + 1, sizeof(unsigned int));
     for (unsigned int index = 0; index <= set->mask; index++) {
@@ -138,7 +138,7 @@ void set_grow(Set* set) {
     set->data = new_set.data;
 }
 
-bool game_over(Game* game) {
+inline bool game_over(Game* game) {
     if (game->robots[game->robot] == game->token) {
         return true;
     }
@@ -171,7 +171,7 @@ unsigned char compute_move(
     unsigned char robot, 
     unsigned char direction) 
 {
-    unsigned char index = game->robots[robot];
+    unsigned char index = game->robots[robot] + OFFSET[direction];
     while (true) {
         if (HAS_WALL(game->grid[index], direction)) {
             break;
@@ -248,8 +248,7 @@ unsigned int _search(
                 continue;
             }
         }
-        for (unsigned char shift = 0; shift < 4; shift++) {
-            unsigned char direction = 1 << shift;
+        for (unsigned char direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
                 continue;
             }
