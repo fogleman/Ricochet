@@ -18,11 +18,11 @@ dll = CDLL('_ricochet')
 
 class Game(Structure):
     _fields_ = [
-        ('grid', c_ubyte * 256),
-        ('robots', c_ubyte * 4),
-        ('robot', c_ubyte),
-        ('token', c_ubyte),
-        ('last', c_ubyte),
+        ('grid', c_uint * 256),
+        ('robots', c_uint * 4),
+        ('robot', c_uint),
+        ('token', c_uint),
+        ('last', c_uint),
     ]
 
 CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)

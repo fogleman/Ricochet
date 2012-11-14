@@ -25,36 +25,36 @@
 #define true 1
 #define false 0
 
-unsigned char REVERSE[] = {
+unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
 };
 
-unsigned char OFFSET[] = {
+int OFFSET[] = {
     0, -16, 1, 0, 16, 0, 0, 0, -1
 };
 
 typedef struct {
-    unsigned char grid[256];
-    unsigned char robots[4];
-    unsigned char robot;
-    unsigned char token;
-    unsigned char last;
+    unsigned int grid[256];
+    unsigned int robots[4];
+    unsigned int robot;
+    unsigned int token;
+    unsigned int last;
 } Game;
 
 typedef struct {
     unsigned int mask;
     unsigned int size;
-    unsigned int* data;
+    unsigned int *data;
 } Set;
 
-inline void swap(unsigned char* array, unsigned int a, unsigned int b) {
-    unsigned char temp = array[a];
+inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
+    unsigned int temp = array[a];
     array[a] = array[b];
     array[b] = temp;
 }
 
-inline unsigned int make_key(Game* game) {
-    unsigned char robots[4];
+inline unsigned int make_key(Game *game) {
+    unsigned int robots[4];
     unsigned int index = 0;
     robots[index++] = game->robots[game->robot];
     for (unsigned int i = 0; i < 4; i++) {
@@ -84,25 +84,25 @@ unsigned int hash(unsigned int key) {
     return key;
 }
 
-void set_alloc(Set* set, unsigned int count) {
+void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
-        set->data = (unsigned int *)calloc(set->mask + 1, sizeof(unsigned int));
+        set->data = calloc(set->mask + 1, sizeof(unsigned int));
         set++;
     }
 }
 
-void set_free(Set* set, unsigned int count) {
+void set_free(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         free(set->data);
         set++;
     }
 }
 
-void set_grow(Set* set);
+void set_grow(Set *set);
 
-bool set_add(Set* set, unsigned int key) {
+bool set_add(Set *set, unsigned int key) {
     if (set->size * 2 > set->mask) {
         set_grow(set);
     }
@@ -121,11 +121,11 @@ bool set_add(Set* set, unsigned int key) {
     }
 }
 
-void set_grow(Set* set) {
+void set_grow(Set *set) {
     Set new_set;
     new_set.mask = (set->mask << 2) | 3;
     new_set.size = 0;
-    new_set.data = (unsigned int *)calloc(new_set.mask + 1, sizeof(unsigned int));
+    new_set.data = calloc(new_set.mask + 1, sizeof(unsigned int));
     for (unsigned int index = 0; index <= set->mask; index++) {
         unsigned int key = set->data[index];
         if (key != 0) {
@@ -138,7 +138,7 @@ void set_grow(Set* set) {
     set->data = new_set.data;
 }
 
-inline bool game_over(Game* game) {
+inline bool game_over(Game *game) {
     if (game->robots[game->robot] == game->token) {
         return true;
     }
@@ -148,35 +148,35 @@ inline bool game_over(Game* game) {
 }
 
 bool can_move(
-    Game* game, 
-    unsigned char robot, 
-    unsigned char direction) 
+    Game *game, 
+    unsigned int robot, 
+    unsigned int direction) 
 {
-    unsigned char index = game->robots[robot];
+    unsigned int index = game->robots[robot];
     if (HAS_WALL(game->grid[index], direction)) {
         return false;
     }
     if (game->last == PACK_MOVE(robot, REVERSE[direction])) {
         return false;
     }
-    unsigned char new_index = index + OFFSET[direction];
+    unsigned int new_index = index + OFFSET[direction];
     if (HAS_ROBOT(game->grid[new_index])) {
         return false;
     }
     return true;
 }
 
-unsigned char compute_move(
-    Game* game, 
-    unsigned char robot, 
-    unsigned char direction) 
+unsigned int compute_move(
+    Game *game, 
+    unsigned int robot, 
+    unsigned int direction) 
 {
-    unsigned char index = game->robots[robot] + OFFSET[direction];
+    unsigned int index = game->robots[robot] + OFFSET[direction];
     while (true) {
         if (HAS_WALL(game->grid[index], direction)) {
             break;
         }
-        unsigned char new_index = index + OFFSET[direction];
+        unsigned int new_index = index + OFFSET[direction];
         if (HAS_ROBOT(game->grid[new_index])) {
             break;
         }
@@ -186,13 +186,13 @@ unsigned char compute_move(
 }
 
 unsigned int do_move(
-    Game* game, 
-    unsigned char robot, 
-    unsigned char direction) 
+    Game *game, 
+    unsigned int robot, 
+    unsigned int direction) 
 {
-    unsigned char start = game->robots[robot];
-    unsigned char end = compute_move(game, robot, direction);
-    unsigned char last = game->last;
+    unsigned int start = game->robots[robot];
+    unsigned int end = compute_move(game, robot, direction);
+    unsigned int last = game->last;
     game->robots[robot] = end;
     game->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
@@ -201,13 +201,13 @@ unsigned int do_move(
 }
 
 void undo_move(
-    Game* game, 
+    Game *game, 
     unsigned int undo) 
 {
-    unsigned char robot = UNPACK_ROBOT(undo);
-    unsigned char start = UNPACK_START(undo);
-    unsigned char last = UNPACK_LAST(undo);
-    unsigned char end = game->robots[robot];
+    unsigned int robot = UNPACK_ROBOT(undo);
+    unsigned int start = UNPACK_START(undo);
+    unsigned int last = UNPACK_LAST(undo);
+    unsigned int end = game->robots[robot];
     game->robots[robot] = start;
     game->last = last;
     SET_ROBOT(game->grid[start]);
@@ -219,11 +219,11 @@ unsigned int _hits;
 unsigned int _inner;
 
 unsigned int _search(
-    Game* game, 
+    Game *game, 
     unsigned int depth, 
     unsigned int max_depth, 
-    unsigned char* path,
-    Set* sets) 
+    unsigned char *path,
+    Set *sets) 
 {
     if (depth == 0) {
         _nodes = 0;
@@ -242,13 +242,13 @@ unsigned int _search(
         _hits++;
         return 0;
     }
-    for (unsigned char robot = 0; robot < 4; robot++) {
+    for (unsigned int robot = 0; robot < 4; robot++) {
         if (depth == max_depth - 1) {
             if (robot != game->robot) {
                 continue;
             }
         }
-        for (unsigned char direction = 1; direction <= 8; direction <<= 1) {
+        for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
                 continue;
             }
@@ -267,8 +267,8 @@ unsigned int _search(
 }
 
 unsigned int search(
-    Game* game, 
-    unsigned char* path,
+    Game *game, 
+    unsigned char *path,
     void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int)) 
 {
     if (game_over(game)) {
@@ -299,7 +299,7 @@ void _callback(
     printf("%u %u %u %u\n", depth, nodes, inner, hits);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     Game game = {
         {9, 1, 5, 1, 3, 9, 1, 1, 1, 3, 9, 1, 1, 1, 1, 3, 8, 2, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 3, 8, 0, 0, 0, 0, 2, 12, 0, 2, 9, 0, 0, 0, 0, 4, 2, 12, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 10, 9, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 6, 8, 0, 0, 0, 0, 4, 4, 0, 0, 2, 12, 0, 0, 2, 8, 1, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 1, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 0, 0, 0, 6, 8, 18, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 4, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0, 2, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 2, 12, 2, 8, 0, 0, 16, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 8, 6, 8, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0, 0, 16, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 4, 6, 12, 4, 4, 6},
         {145, 211, 176, 238},
