@@ -238,7 +238,8 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    if (!set_add(&sets[max_depth - depth - 1], make_key(game))) {
+    unsigned int height = max_depth - depth - 1;
+    if (height > 0 && !set_add(&sets[height], make_key(game))) {
         _hits++;
         return 0;
     }
