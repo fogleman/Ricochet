@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_DEPTH 32
 
@@ -36,7 +37,6 @@ int OFFSET[] = {
 typedef struct {
     unsigned int grid[256];
     unsigned int robots[4];
-    unsigned int robot;
     unsigned int token;
     unsigned int last;
 } Game;
@@ -55,13 +55,7 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
 
 inline unsigned int make_key(Game *game) {
     unsigned int robots[4];
-    unsigned int index = 0;
-    robots[index++] = game->robots[game->robot];
-    for (unsigned int i = 0; i < 4; i++) {
-        if (i != game->robot) {
-            robots[index++] = game->robots[i];
-        }
-    }
+    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
@@ -88,7 +82,7 @@ void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
-        set->data = calloc(set->mask + 1, sizeof(unsigned int));
+        set->data = (unsigned int *)calloc(set->mask + 1, sizeof(unsigned int));
         set++;
     }
 }
@@ -125,7 +119,7 @@ void set_grow(Set *set) {
     Set new_set;
     new_set.mask = (set->mask << 2) | 3;
     new_set.size = 0;
-    new_set.data = calloc(new_set.mask + 1, sizeof(unsigned int));
+    new_set.data = (unsigned int *)calloc(new_set.mask + 1, sizeof(unsigned int));
     for (unsigned int index = 0; index <= set->mask; index++) {
         unsigned int key = set->data[index];
         if (key != 0) {
@@ -139,7 +133,7 @@ void set_grow(Set *set) {
 }
 
 inline bool game_over(Game *game) {
-    if (game->robots[game->robot] == game->token) {
+    if (game->robots[0] == game->token) {
         return true;
     }
     else {
@@ -244,10 +238,8 @@ unsigned int _search(
         return 0;
     }
     for (unsigned int robot = 0; robot < 4; robot++) {
-        if (depth == max_depth - 1) {
-            if (robot != game->robot) {
-                continue;
-            }
+        if (robot != 0 && depth == max_depth - 1) {
+            continue;
         }
         for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
@@ -303,8 +295,7 @@ void _callback(
 int main(int argc, char *argv[]) {
     Game game = {
         {9, 1, 5, 1, 3, 9, 1, 1, 1, 3, 9, 1, 1, 1, 1, 3, 8, 2, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 3, 8, 0, 0, 0, 0, 2, 12, 0, 2, 9, 0, 0, 0, 0, 4, 2, 12, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 10, 9, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 6, 8, 0, 0, 0, 0, 4, 4, 0, 0, 2, 12, 0, 0, 2, 8, 1, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 1, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 0, 0, 0, 6, 8, 18, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 4, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0, 2, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 2, 12, 2, 8, 0, 0, 16, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 8, 6, 8, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0, 0, 16, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 4, 6, 12, 4, 4, 6},
-        {145, 211, 176, 238},
-        2,
+        {176, 145, 211, 238},
         54,
         0
     };

@@ -20,7 +20,6 @@ class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
         ('robots', c_uint * 4),
-        ('robot', c_uint),
         ('token', c_uint),
         ('last', c_uint),
     ]
@@ -31,13 +30,14 @@ def search(game, callback=None):
     callback = CALLBACK_FUNC(callback) if callback else None
     data = game.export()
     game = Game()
-    game.robot = data['robot']
     game.token = data['token']
     game.last = 0
     for index, value in enumerate(data['grid']):
         game.grid[index] = value
     for index, value in enumerate(data['robots']):
         game.robots[index] = value
+    game.robots[0], game.robots[data['robot']] = \
+        game.robots[data['robot']], game.robots[0]
     path = create_string_buffer(256)
     depth = dll.search(byref(game), path, callback)
     result = []
