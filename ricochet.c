@@ -41,10 +41,16 @@ typedef struct {
     unsigned int last;
 } Game;
 
+typedef struct _Entry {
+    unsigned int key;
+    unsigned int depth;
+    struct _Entry *next;
+} Entry;
+
 typedef struct {
     unsigned int mask;
     unsigned int size;
-    unsigned int *data;
+    Entry **data;
 } Set;
 
 inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
@@ -82,13 +88,21 @@ void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
-        set->data = (unsigned int *)calloc(set->mask + 1, sizeof(unsigned int));
+        set->data = calloc(set->mask + 1, sizeof(Entry *));
         set++;
     }
 }
 
 void set_free(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
+        for (unsigned int index = 0; index <= set->mask; index++) {
+            Entry *entry = set->data[index];
+            while (entry) {
+                Entry *previous = entry;
+                entry = entry->next;
+                free(previous);
+            }
+        }
         free(set->data);
         set++;
     }
@@ -96,37 +110,46 @@ void set_free(Set *set, unsigned int count) {
 
 void set_grow(Set *set);
 
-bool set_add(Set *set, unsigned int key) {
+bool set_add(Set *set, unsigned int key, unsigned int depth) {
     if (set->size * 2 > set->mask) {
         set_grow(set);
     }
     unsigned int index = hash(key) & set->mask;
-    while (true) {
-        unsigned int entry = set->data[index];
-        if (entry == key) {
-            return false;
+    Entry *entry = set->data[index];
+    while (entry) {
+        if (entry->key == key) {
+            if (entry->depth < depth) {
+                entry->depth = depth;
+                return true;
+            }
+            else {
+                return false;
+            }
         }
-        if (entry == 0) {
-            set->size++;
-            set->data[index] = key;
-            return true;
-        }
-        index = (index + 1) & set->mask;
+        entry = entry->next;
     }
+    entry = malloc(sizeof(Entry));
+    entry->key = key;
+    entry->depth = depth;
+    entry->next = set->data[index];
+    set->data[index] = entry;
+    set->size++;
+    return true;
 }
 
 void set_grow(Set *set) {
     Set new_set;
     new_set.mask = (set->mask << 2) | 3;
     new_set.size = 0;
-    new_set.data = (unsigned int *)calloc(new_set.mask + 1, sizeof(unsigned int));
+    new_set.data = calloc(new_set.mask + 1, sizeof(Entry *));
     for (unsigned int index = 0; index <= set->mask; index++) {
-        unsigned int key = set->data[index];
-        if (key != 0) {
-            set_add(&new_set, key);
+        Entry *entry = set->data[index];
+        while (entry) {
+            set_add(&new_set, entry->key, entry->depth);
+            entry = entry->next;
         }
     }
-    free(set->data);
+    set_free(set, 1);
     set->mask = new_set.mask;
     set->size = new_set.size;
     set->data = new_set.data;
@@ -233,7 +256,7 @@ unsigned int _search(
     }
     _inner++;
     unsigned int height = max_depth - depth - 1;
-    if (height > 0 && !set_add(&sets[height], make_key(game))) {
+    if (height > 0 && !set_add(&sets[0], make_key(game), height)) {
         _hits++;
         return 0;
     }
