@@ -39,6 +39,7 @@ typedef struct {
     unsigned int robots[4];
     unsigned int token;
     unsigned int last;
+    unsigned char memo[256][2763520];
 } Game;
 
 typedef struct {
@@ -47,13 +48,44 @@ typedef struct {
     unsigned int *data;
 } Set;
 
+unsigned int choose_cache[257][4];
+
+unsigned int choose(unsigned int n, unsigned int k) {
+    unsigned int cached = choose_cache[n][k];
+    if (cached) {
+        return cached;
+    }
+    unsigned int result = 1;
+    for (unsigned int i = 1; i <= k; i++) {
+        result *= (n - (k - i));
+        result /= i;
+    }
+    choose_cache[n][k] = result;
+    return result;
+}
+
+unsigned int rank(unsigned int n, unsigned int k, unsigned int *c) {
+    unsigned int result = 0;
+    c[0] = 0;
+    for (unsigned int i = 0; i < k; i++) {
+        unsigned int lo = c[i] + 2;
+        unsigned int hi = c[i + 1] + 1;
+        if (lo < hi) {
+            for (unsigned int j = lo; j < hi; j++) {
+                result += choose(n - j, k - i - 1);
+            }
+        }
+    }
+    return result;
+}
+
 inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
     unsigned int temp = array[a];
     array[a] = array[b];
     array[b] = temp;
 }
 
-inline unsigned int make_key(Game *game) {
+unsigned int make_key(Game *game) {
     unsigned int robots[4];
     memcpy(robots, game->robots, sizeof(unsigned int) * 4);
     if (robots[1] > robots[2]) {
@@ -66,6 +98,21 @@ inline unsigned int make_key(Game *game) {
         swap(robots, 1, 2);
     }
     return MAKE_KEY(robots);
+}
+
+unsigned int make_rank(Game *game) {
+    unsigned int robots[4];
+    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
+    if (robots[1] > robots[2]) {
+        swap(robots, 1, 2);
+    }
+    if (robots[2] > robots[3]) {
+        swap(robots, 2, 3);
+    }
+    if (robots[1] > robots[2]) {
+        swap(robots, 1, 2);
+    }
+    return rank(256, 3, robots);
 }
 
 unsigned int hash(unsigned int key) {
@@ -232,10 +279,19 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    unsigned int height = max_depth - depth - 1;
-    if (height > 0 && !set_add(&sets[height], make_key(game))) {
-        _hits++;
-        return 0;
+    unsigned int height = max_depth - depth;
+    // if (height > 0 && !set_add(&sets[height], make_key(game))) {
+    //     _hits++;
+    //     return 0;
+    // }
+    if (1) {
+        unsigned int rank = make_rank(game);
+        unsigned int memo = game->memo[game->robots[0]][rank];
+        if (memo >= height) {
+            _hits++;
+            return 0;
+        }
+        game->memo[game->robots[0]][rank] = height;
     }
     for (unsigned int robot = 0; robot < 4; robot++) {
         if (robot != 0 && depth == max_depth - 1) {

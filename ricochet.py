@@ -22,6 +22,7 @@ class Game(Structure):
         ('robots', c_uint * 4),
         ('token', c_uint),
         ('last', c_uint),
+        ('memo', c_ubyte * 256 * 2763520),
     ]
 
 CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)
