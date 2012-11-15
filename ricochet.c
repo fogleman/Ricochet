@@ -21,6 +21,8 @@
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
 #define UNPACK_LAST(undo) (undo & 0xff)
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
+#define ROW(x) (x / 16)
+#define COL(x) (x % 16)
 
 #define bool unsigned int
 #define true 1
@@ -133,7 +135,7 @@ void set_grow(Set *set) {
     new_set.data = (Entry *)calloc(new_set.mask + 1, sizeof(Entry));
     for (unsigned int index = 0; index <= set->mask; index++) {
         Entry *entry = set->data + index;
-        if (entry->key != 0) {
+        if (entry->key) {
             set_add(&new_set, entry->key, entry->depth);
         }
     }
@@ -244,8 +246,14 @@ unsigned int _search(
         return 0;
     }
     for (unsigned int robot = 0; robot < 4; robot++) {
-        if (robot != 0 && depth == max_depth - 1) {
-            continue;
+        if (depth == max_depth - 1) {
+            if (robot) {
+                continue;
+            }
+            if (ROW(game->robots[0]) != ROW(game->token) &&
+                COL(game->robots[0]) != COL(game->token)) {
+                continue;
+            }
         }
         for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
