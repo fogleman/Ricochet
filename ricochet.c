@@ -26,11 +26,11 @@
 #define true 1
 #define false 0
 
-unsigned int REVERSE[] = {
+const unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
 };
 
-int OFFSET[] = {
+const int OFFSET[] = {
     0, -16, 1, 0, 16, 0, 0, 0, -1
 };
 
@@ -102,26 +102,27 @@ void set_free(Set *set, unsigned int count) {
 void set_grow(Set *set);
 
 bool set_add(Set *set, unsigned int key, unsigned int depth) {
-    if (set->size * 2 > set->mask) {
-        set_grow(set);
-    }
     unsigned int index = hash(key) & set->mask;
-    while (true) {
-        Entry *entry = set->data + index;
-        if (entry->key == key) {
-            if (entry->depth < depth) {
-                entry->depth = depth;
-                return true;
-            }
-            return false;
-        }
-        if (entry->key == 0) {
-            set->size++;
-            entry->key = key;
+    Entry *entry = set->data + index;
+    while (entry->key && entry->key != key) {
+        index = (index + 1) & set->mask;
+        entry = set->data + index;
+    }
+    if (entry->key == key) {
+        if (entry->depth < depth) {
             entry->depth = depth;
             return true;
         }
-        index = (index + 1) & set->mask;
+        return false;
+    }
+    else {
+        entry->key = key;
+        entry->depth = depth;
+        set->size++;
+        if (set->size * 2 > set->mask) {
+            set_grow(set);
+        }
+        return true;
     }
 }
 
