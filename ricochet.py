@@ -36,14 +36,16 @@ def search(game, callback=None):
         game.grid[index] = value
     for index, value in enumerate(data['robots']):
         game.robots[index] = value
-    game.robots[0], game.robots[data['robot']] = \
-        game.robots[data['robot']], game.robots[0]
+    robot = data['robot']
+    colors = list('RGBY')
+    colors[0], colors[robot] = colors[robot], colors[0]
+    game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
     path = create_string_buffer(256)
     depth = dll.search(byref(game), path, callback)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)
-        color = COLORS[(value >> 4) & 0x0f]
+        color = colors[(value >> 4) & 0x0f]
         direction = DIRECTIONS[value & 0x0f]
         result.append((color, direction))
     return result
