@@ -42,9 +42,14 @@ typedef struct {
 } Game;
 
 typedef struct {
+    unsigned int key;
+    unsigned int depth;
+} Entry;
+
+typedef struct {
     unsigned int mask;
     unsigned int size;
-    unsigned int *data;
+    Entry *data;
 } Set;
 
 inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
@@ -82,7 +87,7 @@ void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
         set->size = 0;
-        set->data = (unsigned int *)calloc(set->mask + 1, sizeof(unsigned int));
+        set->data = (Entry *)calloc(set->mask + 1, sizeof(Entry));
         set++;
     }
 }
@@ -96,19 +101,24 @@ void set_free(Set *set, unsigned int count) {
 
 void set_grow(Set *set);
 
-bool set_add(Set *set, unsigned int key) {
+bool set_add(Set *set, unsigned int key, unsigned int depth) {
     if (set->size * 2 > set->mask) {
         set_grow(set);
     }
     unsigned int index = hash(key) & set->mask;
     while (true) {
-        unsigned int entry = set->data[index];
-        if (entry == key) {
+        Entry *entry = set->data + index;
+        if (entry->key == key) {
+            if (entry->depth < depth) {
+                entry->depth = depth;
+                return true;
+            }
             return false;
         }
-        if (entry == 0) {
+        if (entry->key == 0) {
             set->size++;
-            set->data[index] = key;
+            entry->key = key;
+            entry->depth = depth;
             return true;
         }
         index = (index + 1) & set->mask;
@@ -119,11 +129,11 @@ void set_grow(Set *set) {
     Set new_set;
     new_set.mask = (set->mask << 2) | 3;
     new_set.size = 0;
-    new_set.data = (unsigned int *)calloc(new_set.mask + 1, sizeof(unsigned int));
+    new_set.data = (Entry *)calloc(new_set.mask + 1, sizeof(Entry));
     for (unsigned int index = 0; index <= set->mask; index++) {
-        unsigned int key = set->data[index];
-        if (key != 0) {
-            set_add(&new_set, key);
+        Entry *entry = set->data + index;
+        if (entry->key != 0) {
+            set_add(&new_set, entry->key, entry->depth);
         }
     }
     free(set->data);
@@ -217,7 +227,7 @@ unsigned int _search(
     unsigned int depth, 
     unsigned int max_depth, 
     unsigned char *path,
-    Set *sets) 
+    Set *set) 
 {
     if (depth == 0) {
         _nodes = 0;
@@ -232,8 +242,8 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    unsigned int height = max_depth - depth - 1;
-    if (height > 0 && !set_add(&sets[height], make_key(game))) {
+    unsigned int height = max_depth - depth;
+    if (height > 1 && !set_add(set, make_key(game), height)) {
         _hits++;
         return 0;
     }
@@ -247,7 +257,7 @@ unsigned int _search(
             }
             unsigned int undo = do_move(game, robot, direction);
             unsigned int result = _search(
-                game, depth + 1, max_depth, path, sets
+                game, depth + 1, max_depth, path, set
             );
             undo_move(game, undo);
             if (result) {
@@ -268,10 +278,10 @@ unsigned int search(
         return 0;
     }
     unsigned int result = 0;
-    Set sets[MAX_DEPTH];
-    set_alloc(sets, MAX_DEPTH);
+    Set set;
+    set_alloc(&set, 1);
     for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
-        result = _search(game, 0, max_depth, path, sets);
+        result = _search(game, 0, max_depth, path, &set);
         if (callback) {
             callback(max_depth, _nodes, _inner, _hits);
         }
@@ -279,7 +289,7 @@ unsigned int search(
             break;
         }
     }
-    set_free(sets, MAX_DEPTH);
+    set_free(&set, 1);
     return result;
 }
 
