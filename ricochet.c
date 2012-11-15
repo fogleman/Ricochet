@@ -110,7 +110,7 @@ bool set_add(Set *set, unsigned int key, unsigned int depth) {
         index = (index + 1) & set->mask;
         entry = set->data + index;
     }
-    if (entry->key == key) {
+    if (entry->key) {
         if (entry->depth < depth) {
             entry->depth = depth;
             return true;
