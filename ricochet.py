@@ -19,6 +19,7 @@ dll = CDLL('_ricochet')
 class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
+        ('moves', c_uint * 256),
         ('robots', c_uint * 4),
         ('token', c_uint),
         ('last', c_uint),

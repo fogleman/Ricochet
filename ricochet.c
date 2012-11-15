@@ -38,6 +38,7 @@ const int OFFSET[] = {
 
 typedef struct {
     unsigned int grid[256];
+    unsigned int moves[256];
     unsigned int robots[4];
     unsigned int token;
     unsigned int last;
@@ -221,6 +222,40 @@ void undo_move(
     UNSET_ROBOT(game->grid[end]);
 }
 
+void precompute_minimum_moves(
+    Game *game)
+{
+    bool status[256];
+    for (unsigned int i = 0; i < 256; i++) {
+        game->moves[i] = 0xffffffff;
+        status[i] = false;
+    }
+    game->moves[game->token] = 0;
+    status[game->token] = true;
+    bool done = false;
+    while (!done) {
+        done = true;
+        for (unsigned int i = 0; i < 256; i++) {
+            if (!status[i]) {
+                continue;
+            }
+            status[i] = false;
+            unsigned int depth = game->moves[i] + 1;
+            for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
+                unsigned int index = i;
+                while (!HAS_WALL(game->grid[index], direction)) {
+                    index += OFFSET[direction];
+                    if (game->moves[index] > depth) {
+                        game->moves[index] = depth;
+                        status[index] = true;
+                        done = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
 unsigned int _nodes;
 unsigned int _hits;
 unsigned int _inner;
@@ -241,27 +276,16 @@ unsigned int _search(
     }
     _inner++;
     unsigned int height = max_depth - depth;
+    if (game->moves[game->robots[0]] > height) {
+        return 0;
+    }
     if (height != 1 && !set_add(set, make_key(game), height)) {
         _hits++;
         return 0;
     }
     for (unsigned int robot = 0; robot < 4; robot++) {
-        if (depth == max_depth - 1) {
-            if (robot) {
-                continue;
-            }
-            if (ROW(game->robots[0]) != ROW(game->token) &&
-                COL(game->robots[0]) != COL(game->token)) {
-                continue;
-            }
-        }
-        else if (depth == max_depth - 2) {
-            if (ROW(game->robots[0]) != ROW(game->token) &&
-                COL(game->robots[0]) != COL(game->token)) {
-                if (robot) {
-                    continue;
-                }
-            }
+        if (robot && game->moves[game->robots[0]] == height) {
+            continue;
         }
         for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
@@ -292,6 +316,7 @@ unsigned int search(
     unsigned int result = 0;
     Set set;
     set_alloc(&set, 1);
+    precompute_minimum_moves(game);
     for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
         _nodes = 0;
         _hits = 0;
