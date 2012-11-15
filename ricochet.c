@@ -229,11 +229,6 @@ unsigned int _search(
     unsigned char *path,
     Set *set) 
 {
-    if (depth == 0) {
-        _nodes = 0;
-        _hits = 0;
-        _inner = 0;
-    }
     _nodes++;
     if (game_over(game)) {
         return depth;
@@ -243,7 +238,7 @@ unsigned int _search(
     }
     _inner++;
     unsigned int height = max_depth - depth;
-    if (height > 1 && !set_add(set, make_key(game), height)) {
+    if (height != 1 && !set_add(set, make_key(game), height)) {
         _hits++;
         return 0;
     }
@@ -281,6 +276,9 @@ unsigned int search(
     Set set;
     set_alloc(&set, 1);
     for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
+        _nodes = 0;
+        _hits = 0;
+        _inner = 0;
         result = _search(game, 0, max_depth, path, &set);
         if (callback) {
             callback(max_depth, _nodes, _inner, _hits);
