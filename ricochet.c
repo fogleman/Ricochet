@@ -255,6 +255,14 @@ unsigned int _search(
                 continue;
             }
         }
+        else if (depth == max_depth - 2) {
+            if (ROW(game->robots[0]) != ROW(game->token) &&
+                COL(game->robots[0]) != COL(game->token)) {
+                if (robot) {
+                    continue;
+                }
+            }
+        }
         for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
                 continue;
