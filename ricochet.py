@@ -27,57 +27,34 @@ class Game(Structure):
 
 CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)
 
-def search(game, callback=None):
+def search(model, callback=None):
     callback = CALLBACK_FUNC(callback) if callback else None
-    data = game.export()
     game = Game()
     game.last = 0
-    tokens = [data['token']] + [0xffffffff] * 3
-    for index, value in enumerate(tokens):
-        game.tokens[index] = value
-    for index, value in enumerate(data['grid']):
-        game.grid[index] = value
-    for index, value in enumerate(data['robots']):
-        game.robots[index] = value
-    robot = data['robot']
-    colors = list('RGBY')
-    colors[0], colors[robot] = colors[robot], colors[0]
-    game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
+    grid = [0x0f] * 256
+    for index in xrange(model.width * model.height):
+        x, y = model.xy(index)
+        grid[y * 16 + x] = model.get_mask(index)
+    for i, value in enumerate(grid):
+        game.grid[i] = value
+    for i, value in enumerate(model.robots):
+        if value < 0:
+            game.robots[i] = 0xff
+        else:
+            x, y = model.xy(value)
+            game.robots[i] = y * 16 + x
+    for i, value in enumerate(model.tokens):
+        if value < 0:
+            game.tokens[i] = 0xff
+        else:
+            x, y = model.xy(value)
+            game.tokens[i] = y * 16 + x
     path = create_string_buffer(256)
     depth = dll.search(byref(game), path, callback)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)
-        color = colors[(value >> 4) & 0x0f]
+        color = COLORS[(value >> 4) & 0x0f]
         direction = DIRECTIONS[value & 0x0f]
         result.append((color, direction))
     return result
-
-if __name__ == '__main__':
-    import model
-    import time
-    import random
-    import collections
-    count = 0
-    best = (0, 0)
-    hist = collections.defaultdict(int)
-    def callback(depth, nodes, inner, hits):
-        print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
-    seed = 0
-    while True:
-        count += 1
-        #seed = random.randint(0, 0x7fffffff)
-        seed += 1
-        start = time.clock()
-        path = search(model.Game(seed))#, callback)
-        moves = len(path)
-        hist[moves] += 1
-        key = (moves, seed)
-        if key > best:
-            best = key
-        path = [''.join(move) for move in path]
-        path = ','.join(path)
-        duration = time.clock() - start
-        #print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
-        #print dict(hist)
-        print '%d %d [%s]' % (seed, moves, path)

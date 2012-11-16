@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_DEPTH 32
+#define MAX_DEPTH 64
 
 #define NORTH 0x01
 #define EAST  0x02
@@ -25,7 +25,7 @@
 #define bool unsigned int
 #define true 1
 #define false 0
-#define blank 0xffffffff
+#define blank 0xff
 
 const unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
