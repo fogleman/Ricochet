@@ -25,6 +25,7 @@
 #define bool unsigned int
 #define true 1
 #define false 0
+#define blank 0xffffffff
 
 const unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
@@ -36,9 +37,9 @@ const int OFFSET[] = {
 
 typedef struct {
     unsigned int grid[256];
-    unsigned int moves[256];
+    unsigned int moves[4][256];
     unsigned int robots[4];
-    unsigned int token;
+    unsigned int tokens[4];
     unsigned int last;
 } Game;
 
@@ -52,27 +53,6 @@ typedef struct {
     unsigned int size;
     Entry *data;
 } Set;
-
-inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
-    unsigned int temp = array[a];
-    array[a] = array[b];
-    array[b] = temp;
-}
-
-inline unsigned int make_key(Game *game) {
-    unsigned int robots[4];
-    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    if (robots[2] > robots[3]) {
-        swap(robots, 2, 3);
-    }
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    return MAKE_KEY(robots);
-}
 
 unsigned int hash(unsigned int key) {
     key = ~key + (key << 15);
@@ -145,12 +125,12 @@ void set_grow(Set *set) {
 }
 
 inline bool game_over(Game *game) {
-    if (game->robots[0] == game->token) {
-        return true;
+    for (unsigned int i = 0; i < 4; i++) {
+        if (game->tokens[i] != blank && game->tokens[i] != game->robots[i]) {
+            return false;
+        }
     }
-    else {
-        return false;
-    }
+    return true;
 }
 
 bool can_move(
@@ -221,15 +201,16 @@ void undo_move(
 }
 
 void precompute_minimum_moves(
-    Game *game)
+    Game *game,
+    unsigned int robot)
 {
     bool status[256];
     for (unsigned int i = 0; i < 256; i++) {
-        game->moves[i] = 0xffffffff;
+        game->moves[robot][i] = blank;
         status[i] = false;
     }
-    game->moves[game->token] = 0;
-    status[game->token] = true;
+    game->moves[robot][game->tokens[robot]] = 0;
+    status[game->tokens[robot]] = true;
     bool done = false;
     while (!done) {
         done = true;
@@ -238,13 +219,13 @@ void precompute_minimum_moves(
                 continue;
             }
             status[i] = false;
-            unsigned int depth = game->moves[i] + 1;
+            unsigned int depth = game->moves[robot][i] + 1;
             for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
                 unsigned int index = i;
                 while (!HAS_WALL(game->grid[index], direction)) {
                     index += OFFSET[direction];
-                    if (game->moves[index] > depth) {
-                        game->moves[index] = depth;
+                    if (game->moves[robot][index] > depth) {
+                        game->moves[robot][index] = depth;
                         status[index] = true;
                         done = false;
                     }
@@ -274,16 +255,20 @@ unsigned int _search(
     }
     _inner++;
     unsigned int height = max_depth - depth;
-    if (game->moves[game->robots[0]] > height) {
-        return 0;
+    for (unsigned int i = 0; i < 4; i++) {
+        if (game->tokens[i] != blank && game->moves[i][game->robots[i]] > height) {
+            return 0;
+        }
     }
-    if (height != 1 && !set_add(set, make_key(game), height)) {
+    if (height != 1 && !set_add(set, MAKE_KEY(game->robots), height)) {
         _hits++;
         return 0;
     }
     for (unsigned int robot = 0; robot < 4; robot++) {
-        if (robot && game->moves[game->robots[0]] == height) {
-            continue;
+        for (unsigned int i = 0; i < 4; i++) {
+            if (robot != i && game->tokens[i] != blank && game->moves[i][game->robots[i]] == height) {
+                continue;
+            }
         }
         for (unsigned int direction = 1; direction <= 8; direction <<= 1) {
             if (!can_move(game, robot, direction)) {
@@ -314,7 +299,9 @@ unsigned int search(
     unsigned int result = 0;
     Set set;
     set_alloc(&set, 1);
-    precompute_minimum_moves(game);
+    for (unsigned int robot = 0; robot < 4; robot++) {
+        precompute_minimum_moves(game, robot);
+    }
     for (unsigned int max_depth = 1; max_depth < MAX_DEPTH; max_depth++) {
         _nodes = 0;
         _hits = 0;

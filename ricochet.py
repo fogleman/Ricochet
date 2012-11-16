@@ -19,9 +19,9 @@ dll = CDLL('_ricochet')
 class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
-        ('moves', c_uint * 256),
+        ('moves', c_uint * 4 * 256),
         ('robots', c_uint * 4),
-        ('token', c_uint),
+        ('tokens', c_uint * 4),
         ('last', c_uint),
     ]
 
@@ -31,8 +31,10 @@ def search(game, callback=None):
     callback = CALLBACK_FUNC(callback) if callback else None
     data = game.export()
     game = Game()
-    game.token = data['token']
     game.last = 0
+    tokens = [data['token']] + [0xffffffff] * 3
+    for index, value in enumerate(tokens):
+        game.tokens[index] = value
     for index, value in enumerate(data['grid']):
         game.grid[index] = value
     for index, value in enumerate(data['robots']):
