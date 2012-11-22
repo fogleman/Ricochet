@@ -187,10 +187,11 @@ def rotate_quad(data, times=1):
         data = result
     return data
 
-def create_grid():
-    quads = [random.choice(pair) for pair in QUADS]
+def create_grid(quads=None):
+    if quads is None:
+        quads = [random.choice(pair) for pair in QUADS]
+        random.shuffle(quads)
     quads = [quad.split(',') for quad in quads]
-    random.shuffle(quads)
     quads = [rotate_quad(quads[i], i) for i in [0, 1, 3, 2]]
     result = [None for i in range(16 * 16)]
     for i, quad in enumerate(quads):
@@ -212,12 +213,21 @@ def to_mask(cell):
 
 # Game
 class Game(object):
-    def __init__(self, seed=None):
+    @staticmethod
+    def hardest():
+        quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
+        robots = [226, 48, 43, 18]
+        token = 'BT'
+        return Game(quads=quads, robots=robots, token=token)
+    def __init__(self, seed=None, quads=None, robots=None, token=None):
         if seed:
             random.seed(seed)
-        self.grid = create_grid()
-        self.robots = self.place_robots()
-        self.token = random.choice(TOKENS)
+        self.grid = create_grid(quads)
+        if robots is None:
+            self.robots = self.place_robots()
+        else:
+            self.robots = dict(zip(COLORS, robots))
+        self.token = token or random.choice(TOKENS)
         self.moves = 0
         self.last = None
     def place_robots(self):

@@ -146,7 +146,9 @@ class View(wx.Panel):
 class Frame(wx.Frame):
     def __init__(self, seed=None):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
-        self.view = View(self, model.Game(seed))
+        game = model.Game(seed)
+        game = model.Game.hardest()
+        self.view = View(self, game)
         self.view.SetSize((800, 800))
         self.Fit()
 
