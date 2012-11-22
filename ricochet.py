@@ -1,12 +1,5 @@
 from ctypes import *
 
-COLORS = {
-    0: 'R',
-    1: 'G',
-    2: 'B',
-    3: 'Y',
-}
-
 DIRECTIONS = {
     1: 'N',
     2: 'E',
@@ -19,10 +12,15 @@ dll = CDLL('_ricochet')
 class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
-        ('moves', c_uint * 256),
-        ('robots', c_uint * 4),
         ('token', c_uint),
-        ('last', c_uint),
+    ]
+
+class State(Structure):
+    _fields_ = [
+        ('robots', c_ubyte * 4),
+        ('depth', c_ushort),
+        ('last', c_ushort),
+        ('parent', c_uint),
     ]
 
 CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)
@@ -31,18 +29,21 @@ def search(game, callback=None):
     callback = CALLBACK_FUNC(callback) if callback else None
     data = game.export()
     game = Game()
+    state = State()
     game.token = data['token']
-    game.last = 0
+    state.depth = 0
+    state.last = 0
+    state.parent = 0xffffffff
     for index, value in enumerate(data['grid']):
         game.grid[index] = value
     for index, value in enumerate(data['robots']):
-        game.robots[index] = value
+        state.robots[index] = value
     robot = data['robot']
     colors = list('RGBY')
     colors[0], colors[robot] = colors[robot], colors[0]
-    game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
+    state.robots[0], state.robots[robot] = state.robots[robot], state.robots[0]
     path = create_string_buffer(256)
-    depth = dll.search(byref(game), path, callback)
+    depth = dll.search(byref(game), byref(state), path, callback)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)
