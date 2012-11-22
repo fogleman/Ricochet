@@ -272,7 +272,6 @@ unsigned int _search(
     if (depth == max_depth) {
         return 0;
     }
-    _inner++;
     unsigned int height = max_depth - depth;
     if (game->moves[game->robots[0]] > height) {
         return 0;
@@ -281,6 +280,7 @@ unsigned int _search(
         _hits++;
         return 0;
     }
+    _inner++;
     for (unsigned int robot = 0; robot < 4; robot++) {
         if (robot && game->moves[game->robots[0]] == height) {
             continue;
