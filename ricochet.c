@@ -74,7 +74,7 @@ inline unsigned int make_key(Game *game) {
     return MAKE_KEY(robots);
 }
 
-unsigned int hash(unsigned int key) {
+inline unsigned int hash(unsigned int key) {
     key = ~key + (key << 15);
     key = key ^ (key >> 12);
     key = key + (key << 2);
@@ -86,7 +86,7 @@ unsigned int hash(unsigned int key) {
 
 void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
-        set->mask = 0xfff;
+        set->mask = 0x0ffffff;
         set->size = 0;
         set->data = (Entry *)calloc(set->mask + 1, sizeof(Entry));
         set++;
