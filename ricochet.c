@@ -26,6 +26,8 @@
 #define true 1
 #define false 0
 
+#define LOTSAMEM
+
 const unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
 };
@@ -42,10 +44,18 @@ typedef struct {
     unsigned int last;
 } Game;
 
+#ifndef LOTSAMEM
 typedef struct {
     unsigned int key;
     unsigned int depth;
 } Entry;
+#endif
+
+#ifdef LOTSAMEM
+typedef struct {
+    unsigned int depth;
+} Entry;
+#endif
 
 typedef struct {
     unsigned int mask;
@@ -62,7 +72,7 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
 inline unsigned int make_key(Game *game) {
     unsigned int robots[4];
     memcpy(robots, game->robots, sizeof(unsigned int) * 4);
-    if (robots[1] > robots[2]) {
+/*    if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
     if (robots[2] > robots[3]) {
@@ -70,8 +80,8 @@ inline unsigned int make_key(Game *game) {
     }
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
-    }
-    return MAKE_KEY(robots);
+    } */
+    return MAKE_KEY(robots); 
 }
 
 unsigned int hash(unsigned int key) {
@@ -84,6 +94,7 @@ unsigned int hash(unsigned int key) {
     return key;
 }
 
+#ifndef LOTSAMEM
 void set_alloc(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         set->mask = 0xfff;
@@ -92,14 +103,42 @@ void set_alloc(Set *set, unsigned int count) {
         set++;
     }
 }
+#endif
 
+#ifdef LOTSAMEM
+void set_alloc(Set *set, unsigned int count) {
+  set->data = (Entry *)calloc(1073741824, sizeof(Entry));
+}
+#endif
+  
+#ifndef LOTSAMEM
 void set_free(Set *set, unsigned int count) {
     for (unsigned int i = 0; i < count; i++) {
         free(set->data);
         set++;
     }
 }
+#endif
 
+#ifdef LOTSAMEM
+void set_free(Set *set, unsigned int count) {
+  free(set->data);
+}
+#endif
+
+#ifdef LOTSAMEM
+bool set_add(Set *set, unsigned int key, unsigned int depth) {
+    Entry *entry = set->data + key/4;
+    
+    if (entry->depth < depth) {
+            entry->depth = depth;
+            return true;
+        }
+        return false;
+}
+#endif
+
+#ifndef LOTSAMEM
 void set_grow(Set *set);
 
 bool set_add(Set *set, unsigned int key, unsigned int depth) {
@@ -143,6 +182,7 @@ void set_grow(Set *set) {
     set->size = new_set.size;
     set->data = new_set.data;
 }
+#endif
 
 inline bool game_over(Game *game) {
     if (game->robots[0] == game->token) {
