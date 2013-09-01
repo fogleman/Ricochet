@@ -72,7 +72,8 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
 inline unsigned int make_key(Game *game) {
     unsigned int robots[4];
     memcpy(robots, game->robots, sizeof(unsigned int) * 4);
-/*    if (robots[1] > robots[2]) {
+#ifndef LOTSAMEM
+    if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
     if (robots[2] > robots[3]) {
@@ -80,7 +81,8 @@ inline unsigned int make_key(Game *game) {
     }
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
-    } */
+    } 
+#endif
     return MAKE_KEY(robots); 
 }
 
