@@ -14,7 +14,7 @@ DIRECTIONS = {
     8: 'W',
 }
 
-dll = CDLL('_ricochet')
+dll = CDLL('./_ricochet')
 
 class Game(Structure):
     _fields_ = [
