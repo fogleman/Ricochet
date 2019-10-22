@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import wx
 import sys
 import model
@@ -44,7 +46,7 @@ class View(wx.Panel):
         code = event.GetKeyCode()
         if code == wx.WXK_ESCAPE:
             self.GetParent().Close()
-        elif code >= 32 and code < 128:
+        elif code >= 32 and code < 128 and code not in {ord(c) for c in 'HJKL'}:
             value = chr(code)
             if value in model.COLORS:
                 self.color = value
@@ -65,10 +67,18 @@ class View(wx.Panel):
                 wx.WXK_RIGHT: model.EAST,
                 wx.WXK_DOWN: model.SOUTH,
                 wx.WXK_LEFT: model.WEST,
+                'H': model.WEST,
+                'J': model.SOUTH,
+                'K': model.NORTH,
+                'L': model.EAST
             }
-            if code in lookup:
+            # print(code, chr(code))
+            if code in lookup or chr(code) in lookup:
                 color = self.color
-                direction = lookup[code]
+                try:
+                    direction = lookup[code]
+                except KeyError:
+                    direction = lookup[chr(code)]
                 try:
                     self.do_move(color, direction)
                 except Exception:
