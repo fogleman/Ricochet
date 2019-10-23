@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from ctypes import *
 
 COLORS = {
@@ -60,7 +62,8 @@ if __name__ == '__main__':
     best = (0, 0)
     hist = collections.defaultdict(int)
     def callback(depth, nodes, inner, hits):
-        print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
+        print('Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner,
+                                                            hits))
     seed = 0
     while True:
         count += 1
@@ -78,4 +81,4 @@ if __name__ == '__main__':
         duration = time.clock() - start
         #print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
         #print dict(hist)
-        print '%d %d [%s]' % (seed, moves, path)
+        print('%d %d [%s]'%(seed, moves, path))

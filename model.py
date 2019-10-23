@@ -213,12 +213,14 @@ def to_mask(cell):
 
 # Game
 class Game(object):
+
     @staticmethod
     def hardest():
         quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
         robots = [226, 48, 43, 18]
         token = 'BT'
         return Game(quads=quads, robots=robots, token=token)
+        
     def __init__(self, seed=None, quads=None, robots=None, token=None):
         if seed:
             random.seed(seed)
@@ -230,6 +232,7 @@ class Game(object):
         self.token = token or random.choice(TOKENS)
         self.moves = 0
         self.last = None
+        
     def place_robots(self):
         result = {}
         used = set()
@@ -246,11 +249,13 @@ class Game(object):
                 used.add(index)
                 break
         return result
+        
     def get_robot(self, index):
         for color, position in self.robots.iteritems():
             if position == index:
                 return color
         return None
+        
     def can_move(self, color, direction):
         if self.last == (color, REVERSE[direction]):
             return False
@@ -261,6 +266,7 @@ class Game(object):
         if new_index in self.robots.itervalues():
             return False
         return True
+        
     def compute_move(self, color, direction):
         index = self.robots[color]
         robots = self.robots.values()
@@ -272,6 +278,7 @@ class Game(object):
                 break
             index = new_index
         return index
+        
     def do_move(self, color, direction):
         start = self.robots[color]
         last = self.last
@@ -284,11 +291,13 @@ class Game(object):
         self.robots[color] = end
         self.last = (color, direction)
         return (color, start, last)
+        
     def undo_move(self, data):
         color, start, last = data
         self.moves -= 1
         self.robots[color] = start
         self.last = last
+        
     def get_moves(self, colors=None):
         result = []
         colors = colors or COLORS
@@ -297,32 +306,52 @@ class Game(object):
                 if self.can_move(color, direction):
                     result.append((color, direction))
         return result
+        
     def over(self):
+        '''
+        determines if the current state of the board is 'solved'
+        '''
         color = self.token[0]
         return self.token in self.grid[self.robots[color]]
+        
     def key(self):
+        '''
+        '''
         return tuple(self.robots.itervalues())
+        
     def search(self):
+        '''
+        parent method for dfs solution search
+        '''
         max_depth = 1
         while True:
-            #print 'Searching to depth:', max_depth
+            print 'Searching to depth:', max_depth
             result = self._search([], set(), 0, max_depth)
             if result is not None:
                 return result
             max_depth += 1
+            
     def _search(self, path, memo, depth, max_depth):
+        '''
+        helper dfs method
+        ---
+            path: the path so far, as a list of moves
+        '''
         if self.over():
             return list(path)
+            
         if depth == max_depth:
             return None
         key = (depth, self.key())
         if key in memo:
             return None
         memo.add(key)
+        
         if depth == max_depth - 1:
             colors = [self.token[0]]
         else:
             colors = None
+            
         moves = self.get_moves(colors)
         for move in moves:
             data = self.do_move(*move)
@@ -332,8 +361,14 @@ class Game(object):
             self.undo_move(data)
             if result:
                 return result
+                
         return None
+        
+        
     def export(self):
+        '''
+        method to export the current game state as a dict
+        '''
         grid = []
         token = None
         robots = [self.robots[color] for color in COLORS]
@@ -351,3 +386,4 @@ class Game(object):
             'token': token,
             'robots': robots,
         }
+        
