@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define MAX_DEPTH 32
+#define NUM_ROBOTS 5
 
 #define NORTH 0x01
 #define EAST  0x02
@@ -37,7 +38,7 @@ const int OFFSET[] = {
 typedef struct {
     unsigned int grid[256];
     unsigned int moves[256];
-    unsigned int robots[4];
+    unsigned int robots[NUM_ROBOTS];
     unsigned int token;
     unsigned int last;
 } Game;
@@ -60,8 +61,20 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
 }
 
 inline unsigned int make_key(Game *game) {
-    unsigned int robots[4];
-    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
+    unsigned int robots[NUM_ROBOTS];
+    memcpy(robots, game->robots, sizeof(unsigned int) * NUM_ROBOTS);
+    int i = 0;
+    while(i+1 < NUM_ROBOTS)
+    {
+        if (robots[i] > robots[i+1])
+        {
+            swap(robots, i, i+1);
+            i--;
+            if (i<0) { i = 0; }
+        }
+        else { i++; }
+    }
+    /*
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
@@ -71,6 +84,7 @@ inline unsigned int make_key(Game *game) {
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
+    */
     return MAKE_KEY(robots);
 }
 
@@ -154,9 +168,9 @@ inline bool game_over(Game *game) {
 }
 
 bool can_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int index = game->robots[robot];
     if (HAS_WALL(game->grid[index], direction)) {
@@ -173,9 +187,9 @@ bool can_move(
 }
 
 unsigned int compute_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int index = game->robots[robot] + OFFSET[direction];
     while (true) {
@@ -192,9 +206,9 @@ unsigned int compute_move(
 }
 
 unsigned int do_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int start = game->robots[robot];
     unsigned int end = compute_move(game, robot, direction);
@@ -207,8 +221,8 @@ unsigned int do_move(
 }
 
 void undo_move(
-    Game *game, 
-    unsigned int undo) 
+    Game *game,
+    unsigned int undo)
 {
     unsigned int robot = UNPACK_ROBOT(undo);
     unsigned int start = UNPACK_START(undo);
@@ -259,11 +273,11 @@ unsigned int _hits;
 unsigned int _inner;
 
 unsigned int _search(
-    Game *game, 
-    unsigned int depth, 
-    unsigned int max_depth, 
+    Game *game,
+    unsigned int depth,
+    unsigned int max_depth,
     unsigned char *path,
-    Set *set) 
+    Set *set)
 {
     _nodes++;
     if (game_over(game)) {
@@ -281,7 +295,7 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    for (unsigned int robot = 0; robot < 4; robot++) {
+    for (unsigned int robot = 0; robot < NUM_ROBOTS; robot++) {
         if (robot && game->moves[game->robots[0]] == height) {
             continue;
         }
@@ -304,9 +318,9 @@ unsigned int _search(
 }
 
 unsigned int search(
-    Game *game, 
+    Game *game,
     unsigned char *path,
-    void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int)) 
+    void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int))
 {
     if (game_over(game)) {
         return 0;
@@ -332,10 +346,10 @@ unsigned int search(
 }
 
 void _callback(
-    unsigned int depth, 
-    unsigned int nodes, 
-    unsigned int inner, 
-    unsigned int hits) 
+    unsigned int depth,
+    unsigned int nodes,
+    unsigned int inner,
+    unsigned int hits)
 {
     printf("%u %u %u %u\n", depth, nodes, inner, hits);
 }

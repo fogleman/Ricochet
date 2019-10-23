@@ -42,8 +42,9 @@ RED = 'R'
 GREEN = 'G'
 BLUE = 'B'
 YELLOW = 'Y'
+SILVER = 'V'
 
-COLORS = [RED, GREEN, BLUE, YELLOW]
+COLORS = [RED, GREEN, BLUE, YELLOW, SILVER]
 
 # Shapes
 CIRCLE = 'C'
@@ -54,7 +55,7 @@ HEXAGON = 'H'
 SHAPES = [CIRCLE, TRIANGLE, SQUARE, HEXAGON]
 
 # Tokens
-TOKENS = [''.join(token) for token in itertools.product(COLORS, SHAPES)]
+TOKENS = [''.join(token) for token in itertools.product(COLORS[:4], SHAPES)]
 
 # Quadrants
 QUAD_1A = (

@@ -7,6 +7,7 @@ COLORS = {
     1: 'G',
     2: 'B',
     3: 'Y',
+    4: 'V'
 }
 
 DIRECTIONS = {
@@ -22,7 +23,7 @@ class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
         ('moves', c_uint * 256),
-        ('robots', c_uint * 4),
+        ('robots', c_uint * 5),
         ('token', c_uint),
         ('last', c_uint),
     ]
@@ -40,7 +41,7 @@ def search(game, callback=None):
     for index, value in enumerate(data['robots']):
         game.robots[index] = value
     robot = data['robot']
-    colors = list('RGBY')
+    colors = list('RGBYV')
     colors[0], colors[robot] = colors[robot], colors[0]
     game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
     path = create_string_buffer(256)

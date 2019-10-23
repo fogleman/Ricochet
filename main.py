@@ -101,7 +101,7 @@ class View(wx.Panel):
             model.GREEN: wx.Colour(50, 205, 50),
             model.BLUE: wx.Colour(65, 105, 225),
             model.YELLOW: wx.Colour(255, 215, 0),
-            #model.SILVER: wx.Colour(192, 192, 192),
+            model.SILVER: wx.Colour(192, 192, 192),
         }
         
         dc = wx.AutoBufferedPaintDC(self)
