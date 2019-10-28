@@ -218,7 +218,7 @@ class Game(object):
     @staticmethod
     def hardest():
         quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
-        robots = [226, 48, 43, 18]
+        robots = [226, 48, 43, 18, 63]
         token = 'BT'
         return Game(quads=quads, robots=robots, token=token)
         

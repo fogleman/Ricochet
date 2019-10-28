@@ -20,7 +20,7 @@ class View(wx.Panel):
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         
     def solve(self):
-        # self.path = self.game.search()
+        #self.path = self.game.search()
         self.path = ricochet.search(self.game, self.callback)
         print (', '.join(''.join(move) for move in self.path))
         self.on_solve()
@@ -179,7 +179,7 @@ class Frame(wx.Frame):
     def __init__(self, seed=None):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
         game = model.Game(seed)
-        # game = model.Game.hardest()
+        game = model.Game.hardest() # TODO
         self.view = View(self, game)
         self.view.SetSize((800, 800))
         self.Fit()
