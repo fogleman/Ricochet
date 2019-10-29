@@ -4,6 +4,7 @@ import wx
 import sys
 import model
 import ricochet
+import argparse
 
 class View(wx.Panel):
 
@@ -176,18 +177,26 @@ class View(wx.Panel):
         dc.DrawText(str(self.game.moves), wall + 1, wall + 1)
 
 class Frame(wx.Frame):
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, nrobots=5):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
-        game = model.Game(seed)
-        game = model.Game.hardest() # TODO
+        game = model.Game(seed, ncolors=nrobots)
+        # game = model.Game.hardest() # TODO
         self.view = View(self, game)
         self.view.SetSize((800, 800))
         self.Fit()
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--state', help='seed to generate random board',
+                        type=int, default=None)
+    parser.add_argument('-r', '--robots', help='number of robots', type=int,
+                        default=5)
+    args = parser.parse_args()
+    print(args)
+
     app = wx.App(False)
-    seed = int(sys.argv[1]) if len(sys.argv) == 2 else None
-    frame = Frame(seed)
+    # seed = int(sys.argv[1]) if len(sys.argv) == 2 else None
+    frame = Frame(args.state, nrobots=args.robots)
     frame.Center()
     frame.Show()
     app.MainLoop()
