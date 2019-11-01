@@ -158,14 +158,12 @@ void set_grow(Set *set) {
     set->data = new_set.data;
 }
 
-inline bool game_over(Game *game) {
-    if (game->robots[0] == game->token) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+inline bool game_over(Game *game) 
+// game->robots stores locations of each individual robot
+// with the target color robot placed first in the list.
+// this method checks whether the target robot is in its place or not
+{ return game->robots[0] == game->token; }
+
 
 bool can_move(
     Game *game,
@@ -280,13 +278,16 @@ unsigned int _search(
     Set *set)
 {
     _nodes++;
+    // if target robot reaches target location
     if (game_over(game)) {
         return depth;
     }
+    // if we've hit the max_depth for this round of iddft
     if (depth == max_depth) {
         return 0;
     }
-    unsigned int height = max_depth - depth;
+    // ??? TODO
+    unsigned int height = max_depth - depth; // depth left to go
     if (game->moves[game->robots[0]] > height) {
         return 0;
     }

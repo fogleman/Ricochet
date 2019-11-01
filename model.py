@@ -322,17 +322,18 @@ class Game(object):
         '''
         return tuple(self.robots.itervalues())
         
-    def search(self):
+    def search(self, limit=25):
         '''
         parent method for dfs solution search
         '''
         max_depth = 1
-        while True:
+        while True and max_depth <= limit:
             print 'Searching to depth:', max_depth
             result = self._search([], set(), 0, max_depth)
             if result is not None:
                 return result
             max_depth += 1
+        return None
             
     def _search(self, path, memo, depth, max_depth):
         '''
