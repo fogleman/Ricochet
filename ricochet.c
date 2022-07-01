@@ -21,7 +21,9 @@
 #define UNPACK_ROBOT(undo) ((undo >> 16) & 0xff)
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
 #define UNPACK_LAST(undo) (undo & 0xff)
-#define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
+#define MAKE_KEY_4(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
+#define MAKE_KEY_5(x) (MAKE_KEY_4(x) | (x[4] << 32))
+#define MAKE_KEY(x) ((NUM_ROBOTS == 4) ? MAKE_KEY_4(x) : MAKE_KEY_5(x) )
 
 #define bool unsigned int
 #define true 1
@@ -38,7 +40,7 @@ const int OFFSET[] = {
 typedef struct {
     unsigned int grid[256];
     unsigned int moves[256];
-    unsigned int robots[NUM_ROBOTS];
+    unsigned long int robots[NUM_ROBOTS];
     unsigned int token;
     unsigned int last;
 } Game;
@@ -54,14 +56,14 @@ typedef struct {
     Entry *data;
 } Set;
 
-inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
+inline void swap(unsigned long int *array, unsigned int a, unsigned int b) {
     unsigned int temp = array[a];
     array[a] = array[b];
     array[b] = temp;
 }
 
 inline unsigned int make_key(Game *game) {
-    unsigned int robots[NUM_ROBOTS];
+    unsigned long int robots[NUM_ROBOTS];
     memcpy(robots, game->robots, sizeof(unsigned int) * NUM_ROBOTS);
     int i = 0;
     while(i+1 < NUM_ROBOTS)
