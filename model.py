@@ -178,7 +178,7 @@ def idx(x, y, size=16):
 
 def xy(index, size=16):
     x = index % size
-    y = index / size
+    y = index // size
     return (x, y)
 
 def rotate_quad(data, times=1):
@@ -254,7 +254,7 @@ class Game(object):
         return result
         
     def get_robot(self, index):
-        for color, position in self.robots.iteritems():
+        for color, position in self.robots.items():
             if position == index:
                 return color
         return None
@@ -266,7 +266,7 @@ class Game(object):
         if direction in self.grid[index]:
             return False
         new_index = index + OFFSET[direction]
-        if new_index in self.robots.itervalues():
+        if new_index in self.robots.values():
             return False
         return True
         
@@ -320,7 +320,7 @@ class Game(object):
     def key(self):
         '''
         '''
-        return tuple(self.robots.itervalues())
+        return tuple(self.robots.values())
         
     def search(self, limit=25):
         '''
@@ -328,7 +328,7 @@ class Game(object):
         '''
         max_depth = 1
         while True and max_depth <= limit:
-            print 'Searching to depth:', max_depth
+            print('Searching to depth:', max_depth)
             result = self._search([], set(), 0, max_depth)
             if result is not None:
                 return result
