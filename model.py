@@ -223,16 +223,16 @@ class Game(object):
         return Game(quads=quads, robots=robots, token=token)
         
     def __init__(self, seed=None, quads=None, robots=None, token=None,
-                 ncolors=5):
-        self.ncolors = ncolors
+                 nrobots=5):
+        self.ncolors = self.nrobots = nrobots
         if seed:
             random.seed(seed)
         self.grid = create_grid(quads)
         if robots is None:
             self.robots = self.place_robots()
         else:
-            self.robots = dict(zip(COLORS[self.ncolors], robots))
-        self.token = token or random.choice(TOKENS)
+            self.robots = dict(zip(COLORS[:self.ncolors], robots))
+        self.token = token or random.choice(TOKENS[:self.ncolors])
         self.moves = 0
         self.last = None
         
@@ -303,7 +303,7 @@ class Game(object):
         
     def get_moves(self, colors=None):
         result = []
-        colors = colors or COLORS
+        colors = colors or COLORS[:self.ncolors]
         for color in colors:
             for direction in DIRECTIONS:
                 if self.can_move(color, direction):

@@ -8,9 +8,10 @@ import argparse
 
 class View(wx.Panel):
 
-    def __init__(self, parent, game):
+    def __init__(self, parent, game, nrobots=5):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.game = game
+        self.nrobots = nrobots
         self.color = None
         self.path = None
         self.undo = []
@@ -70,7 +71,7 @@ class View(wx.Panel):
                 self.path = None
                 self.undo = []
                 self.lines = []
-                self.game = model.Game()
+                self.game = model.Game(nrobots=self.nrobots)
                 self.Refresh()
                 
         elif self.color:
@@ -180,9 +181,9 @@ class Frame(wx.Frame):
     def __init__(self, seed=None, nrobots=5):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robots!')
         assert 0 < nrobots <= 5, 'Invalid number of robots'
-        game = model.Game(seed, ncolors=nrobots)
+        game = model.Game(seed, nrobots=nrobots)
         # game = model.Game.hardest() # TODO
-        self.view = View(self, game)
+        self.view = View(self, game, nrobots=nrobots)
         self.view.SetSize((800, 800))
         self.Fit()
 
