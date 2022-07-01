@@ -110,10 +110,10 @@ class View(wx.Panel):
         dc.Clear()
         w, h = self.GetClientSize()
         p = 40
-        size = min((w - p) / 16, (h - p) / 16)
-        wall = size / 8
-        ox = (w - size * 16) / 2
-        oy = (h - size * 16) / 2
+        size = min((w - p) // 16, (h - p) // 16)
+        wall = size // 8
+        ox = (w - size * 16) // 2
+        oy = (h - size * 16) // 2
         dc.SetDeviceOrigin(ox, oy)
         dc.SetClippingRegion(0, 0, size * 16 + 1, size * 16 + 1)
         dc.SetBrush(wx.WHITE_BRUSH)
@@ -122,9 +122,9 @@ class View(wx.Panel):
         for color, start, end in self.lines:
             dc.SetPen(wx.Pen(colors[color], 3, wx.DOT))
             x1, y1 = model.xy(start)
-            x1, y1 = x1 * size + size / 2, y1 * size + size / 2
+            x1, y1 = x1 * size + size // 2, y1 * size + size // 2
             x2, y2 = model.xy(end)
-            x2, y2 = x2 * size + size / 2, y2 * size + size / 2
+            x2, y2 = x2 * size + size // 2, y2 * size + size // 2
             dc.DrawLine(x1, y1, x2, y2)
             
         for j in range(16):
@@ -151,7 +151,7 @@ class View(wx.Panel):
                 # robot
                 if robot:
                     dc.SetBrush(wx.Brush(colors[robot]))
-                    dc.DrawCircle(x + size / 2, y + size / 2, size / 3)
+                    dc.DrawCircle(x + size // 2, y + size // 2, size // 3)
                     
                 # walls
                 dc.SetBrush(wx.BLACK_BRUSH)
