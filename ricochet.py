@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from ctypes import *
 
 COLORS = {
@@ -5,6 +7,7 @@ COLORS = {
     1: 'G',
     2: 'B',
     3: 'Y',
+    4: 'V'
 }
 
 DIRECTIONS = {
@@ -20,7 +23,7 @@ class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
         ('moves', c_uint * 256),
-        ('robots', c_uint * 4),
+        ('robots', c_uint * 5),
         ('token', c_uint),
         ('last', c_uint),
     ]
@@ -38,7 +41,7 @@ def search(game, callback=None):
     for index, value in enumerate(data['robots']):
         game.robots[index] = value
     robot = data['robot']
-    colors = list('RGBY')
+    colors = list('RGBYV')
     colors[0], colors[robot] = colors[robot], colors[0]
     game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
     path = create_string_buffer(256)
@@ -60,7 +63,8 @@ if __name__ == '__main__':
     best = (0, 0)
     hist = collections.defaultdict(int)
     def callback(depth, nodes, inner, hits):
-        print 'Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner, hits)
+        print('Depth: %d, Nodes: %d (%d inner, %d hits)' % (depth, nodes, inner,
+                                                            hits))
     seed = 0
     while True:
         count += 1
@@ -78,4 +82,4 @@ if __name__ == '__main__':
         duration = time.clock() - start
         #print '%d. %2d (%.3f) %s [%s]'% (count, moves, duration, best, path)
         #print dict(hist)
-        print '%d %d [%s]' % (seed, moves, path)
+        print('%d %d [%s]'%(seed, moves, path))

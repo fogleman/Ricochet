@@ -42,8 +42,9 @@ RED = 'R'
 GREEN = 'G'
 BLUE = 'B'
 YELLOW = 'Y'
+SILVER = 'V'
 
-COLORS = [RED, GREEN, BLUE, YELLOW]
+COLORS = [RED, GREEN, BLUE, YELLOW, SILVER]
 
 # Shapes
 CIRCLE = 'C'
@@ -54,7 +55,7 @@ HEXAGON = 'H'
 SHAPES = [CIRCLE, TRIANGLE, SQUARE, HEXAGON]
 
 # Tokens
-TOKENS = [''.join(token) for token in itertools.product(COLORS, SHAPES)]
+TOKENS = [''.join(token) for token in itertools.product(COLORS[:4], SHAPES)]
 
 # Quadrants
 QUAD_1A = (
@@ -177,7 +178,7 @@ def idx(x, y, size=16):
 
 def xy(index, size=16):
     x = index % size
-    y = index / size
+    y = index // size
     return (x, y)
 
 def rotate_quad(data, times=1):
@@ -213,27 +214,32 @@ def to_mask(cell):
 
 # Game
 class Game(object):
+
     @staticmethod
     def hardest():
         quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
-        robots = [226, 48, 43, 18]
+        robots = [226, 48, 43, 18, 63]
         token = 'BT'
         return Game(quads=quads, robots=robots, token=token)
-    def __init__(self, seed=None, quads=None, robots=None, token=None):
+        
+    def __init__(self, seed=None, quads=None, robots=None, token=None,
+                 nrobots=5):
+        self.ncolors = self.nrobots = nrobots
         if seed:
             random.seed(seed)
         self.grid = create_grid(quads)
         if robots is None:
             self.robots = self.place_robots()
         else:
-            self.robots = dict(zip(COLORS, robots))
-        self.token = token or random.choice(TOKENS)
+            self.robots = dict(zip(COLORS[:self.ncolors], robots))
+        self.token = token or random.choice(TOKENS[:self.ncolors])
         self.moves = 0
         self.last = None
+        
     def place_robots(self):
         result = {}
         used = set()
-        for color in COLORS:
+        for color in COLORS[:self.ncolors]:
             while True:
                 index = random.randint(0, 255)
                 if index in (119, 120, 135, 136):
@@ -246,11 +252,13 @@ class Game(object):
                 used.add(index)
                 break
         return result
+        
     def get_robot(self, index):
-        for color, position in self.robots.iteritems():
+        for color, position in self.robots.items():
             if position == index:
                 return color
         return None
+        
     def can_move(self, color, direction):
         if self.last == (color, REVERSE[direction]):
             return False
@@ -258,9 +266,10 @@ class Game(object):
         if direction in self.grid[index]:
             return False
         new_index = index + OFFSET[direction]
-        if new_index in self.robots.itervalues():
+        if new_index in self.robots.values():
             return False
         return True
+        
     def compute_move(self, color, direction):
         index = self.robots[color]
         robots = self.robots.values()
@@ -272,6 +281,7 @@ class Game(object):
                 break
             index = new_index
         return index
+        
     def do_move(self, color, direction):
         start = self.robots[color]
         last = self.last
@@ -284,45 +294,68 @@ class Game(object):
         self.robots[color] = end
         self.last = (color, direction)
         return (color, start, last)
+        
     def undo_move(self, data):
         color, start, last = data
         self.moves -= 1
         self.robots[color] = start
         self.last = last
+        
     def get_moves(self, colors=None):
         result = []
-        colors = colors or COLORS
+        colors = colors or COLORS[:self.ncolors]
         for color in colors:
             for direction in DIRECTIONS:
                 if self.can_move(color, direction):
                     result.append((color, direction))
         return result
+        
     def over(self):
+        '''
+        determines if the current state of the board is 'solved'
+        '''
         color = self.token[0]
         return self.token in self.grid[self.robots[color]]
+        
     def key(self):
-        return tuple(self.robots.itervalues())
-    def search(self):
+        '''
+        '''
+        return tuple(self.robots.values())
+        
+    def search(self, limit=25):
+        '''
+        parent method for dfs solution search
+        '''
         max_depth = 1
-        while True:
-            #print 'Searching to depth:', max_depth
+        while True and max_depth <= limit:
+            print('Searching to depth:', max_depth)
             result = self._search([], set(), 0, max_depth)
             if result is not None:
                 return result
             max_depth += 1
+        return None
+            
     def _search(self, path, memo, depth, max_depth):
+        '''
+        helper dfs method
+        ---
+            path: the path so far, as a list of moves
+        '''
         if self.over():
             return list(path)
+            
         if depth == max_depth:
             return None
         key = (depth, self.key())
         if key in memo:
             return None
         memo.add(key)
+        
         if depth == max_depth - 1:
             colors = [self.token[0]]
         else:
             colors = None
+            
         moves = self.get_moves(colors)
         for move in moves:
             data = self.do_move(*move)
@@ -332,8 +365,14 @@ class Game(object):
             self.undo_move(data)
             if result:
                 return result
+                
         return None
+        
+        
     def export(self):
+        '''
+        method to export the current game state as a dict
+        '''
         grid = []
         token = None
         robots = [self.robots[color] for color in COLORS]
@@ -351,3 +390,4 @@ class Game(object):
             'token': token,
             'robots': robots,
         }
+        
